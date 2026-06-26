@@ -14,7 +14,6 @@ import { Ionicons } from "@expo/vector-icons";
 import ScreenWrapper from "../components/ScreenWrapper";
 import ContentRow from "../components/ContentRow";
 import { getTVDetails, getTVCredits, getTVSimilar, img } from "../api/tmdb";
-import { MOVIE_PROVIDERS } from "../api/providers";
 import { addToWatchlist, removeFromWatchlist, isInWatchlist } from "../utils/watchlist";
 import { COLORS, RADIUS, SPACING } from "../utils/theme";
 
@@ -85,7 +84,6 @@ export default function TVDetailScreen({ route, navigation }) {
       poster: img(show.poster_path),
       contentId: id,
       contentType: "tv",
-      providers: MOVIE_PROVIDERS,
       season,
       episode,
       totalEpisodes: epsInSeason,

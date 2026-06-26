@@ -15,7 +15,6 @@ import ScreenWrapper from "../components/ScreenWrapper";
 import ContentRow from "../components/ContentRow";
 import { getAnimeById, getAnimeRecommendations, getAnimeCharacters, getAnimeEpisodes } from "../api/jikan";
 import { addToWatchlist, removeFromWatchlist, isInWatchlist } from "../utils/watchlist";
-import { ANIME_PROVIDERS } from "../api/providers";
 import { COLORS, RADIUS, SPACING } from "../utils/theme";
 
 const { width, height } = Dimensions.get("window");
@@ -73,7 +72,6 @@ export default function AnimeDetailScreen({ route, navigation }) {
       poster: anime.images?.jpg?.large_image_url,
       contentId: id,
       contentType: "anime",
-      providers: ANIME_PROVIDERS,
       episode: ep,
       totalEpisodes: totalEps,
       totalSeasons: 1,

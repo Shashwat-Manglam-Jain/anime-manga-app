@@ -11,6 +11,7 @@ import {
 import { WebView } from "react-native-webview";
 import { Ionicons } from "@expo/vector-icons";
 import ScreenWrapper from "../components/ScreenWrapper";
+import { ANIME_PROVIDERS, MOVIE_PROVIDERS } from "../api/providers";
 import {
   updateContinueWatching,
   getPreferredServer,
@@ -20,32 +21,40 @@ import { COLORS, RADIUS, SPACING } from "../utils/theme";
 
 const { width } = Dimensions.get("window");
 
+function getProviders(isAnime) {
+  return isAnime ? ANIME_PROVIDERS : MOVIE_PROVIDERS;
+}
+
 function buildStreamUrl(provider, contentType, isAnime, contentId, season, episode, lang) {
-  if (isAnime) {
-    return provider.buildMalUrl?.(contentId, episode, lang) || "";
+  try {
+    if (isAnime) {
+      return provider.buildMalUrl?.(contentId, episode, lang) || "";
+    }
+    if (contentType === "tv") {
+      return provider.buildTvUrl?.(contentId, season, episode) || "";
+    }
+    return provider.buildMovieUrl?.(contentId) || "";
+  } catch (e) {
+    return "";
   }
-  if (contentType === "tv") {
-    return provider.buildTvUrl?.(contentId, season, episode) || "";
-  }
-  return provider.buildMovieUrl?.(contentId) || "";
 }
 
 export default function VideoPlayerScreen({ route, navigation }) {
   const {
-    title,
+    title = "",
     poster,
     contentId,
-    contentType,
-    providers,
+    contentType = "movie",
     episodeInfo,
     season,
     episode,
     totalEpisodes,
     totalSeasons,
     seasonEpisodeCounts,
-    isAnime,
-  } = route.params;
+    isAnime = false,
+  } = route.params || {};
 
+  const providers = getProviders(isAnime);
   const [providerIdx, setProviderIdx] = useState(0);
   const [currentSeason, setCurrentSeason] = useState(season || 1);
   const [currentEpisode, setCurrentEpisode] = useState(episode || 1);
@@ -82,7 +91,7 @@ export default function VideoPlayerScreen({ route, navigation }) {
     }
   }, [currentEpisode, currentSeason]);
 
-  const currentProvider = providers[providerIdx];
+  const currentProvider = providers[providerIdx] || providers[0];
   const streamUrl = buildStreamUrl(
     currentProvider, contentType, isAnime, contentId,
     currentSeason, currentEpisode, lang
@@ -129,15 +138,17 @@ export default function VideoPlayerScreen({ route, navigation }) {
             <Text style={styles.loadingText}>Loading player...</Text>
           </View>
         )}
-        <WebView
-          source={{ uri: streamUrl }}
-          style={styles.webview}
-          allowsFullscreenVideo
-          allowsInlineMediaPlayback
-          onLoadEnd={() => setLoading(false)}
-          onLoadStart={() => setLoading(true)}
-          onError={() => setLoading(false)}
-        />
+        {streamUrl ? (
+          <WebView
+            source={{ uri: streamUrl }}
+            style={styles.webview}
+            allowsFullscreenVideo
+            allowsInlineMediaPlayback
+            onLoadEnd={() => setLoading(false)}
+            onLoadStart={() => setLoading(true)}
+            onError={() => setLoading(false)}
+          />
+        ) : null}
       </View>
 
       <ScrollView style={styles.controls} showsVerticalScrollIndicator={false}>
@@ -282,10 +293,7 @@ const styles = StyleSheet.create({
     marginTop: SPACING.lg,
     marginBottom: SPACING.sm,
   },
-  langRow: {
-    flexDirection: "row",
-    gap: SPACING.sm,
-  },
+  langRow: { flexDirection: "row", gap: SPACING.sm },
   langBtn: {
     paddingHorizontal: SPACING.xl,
     paddingVertical: SPACING.sm,
@@ -294,10 +302,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  langBtnActive: {
-    backgroundColor: COLORS.accent,
-    borderColor: COLORS.accent,
-  },
+  langBtnActive: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
   langText: { color: COLORS.textSecondary, fontSize: 14, fontWeight: "700" },
   langTextActive: { color: "#fff" },
   serverRow: { gap: SPACING.sm },
@@ -325,11 +330,7 @@ const styles = StyleSheet.create({
   seasonText: { color: COLORS.textSecondary, fontSize: 13, fontWeight: "600" },
   seasonTextActive: { color: "#fff" },
   seasonEpCount: { color: COLORS.textMuted, fontSize: 10, marginTop: 2 },
-  epGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: SPACING.xs,
-  },
+  epGrid: { flexDirection: "row", flexWrap: "wrap", gap: SPACING.xs },
   epBtn: {
     width: 44,
     height: 38,
@@ -343,11 +344,7 @@ const styles = StyleSheet.create({
   epBtnActive: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
   epText: { color: COLORS.textSecondary, fontSize: 13, fontWeight: "600" },
   epTextActive: { color: "#fff" },
-  navRow: {
-    flexDirection: "row",
-    marginTop: SPACING.lg,
-    gap: SPACING.md,
-  },
+  navRow: { flexDirection: "row", marginTop: SPACING.lg, gap: SPACING.md },
   navBtn: {
     flexDirection: "row",
     alignItems: "center",

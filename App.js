@@ -1,31 +1,27 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, LogBox } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import * as SplashScreen from "expo-splash-screen";
 import ErrorBoundary from "./src/components/ErrorBoundary";
 import Navigation from "./src/navigation";
 
-SplashScreen.preventAutoHideAsync();
+let SplashScreen = null;
+try {
+  SplashScreen = require("expo-splash-screen");
+  SplashScreen.preventAutoHideAsync().catch(() => {});
+} catch (e) {}
+
+LogBox.ignoreLogs(["Non-serializable values"]);
 
 export default function App() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const prepare = async () => {
-      try {
-        await new Promise((r) => setTimeout(r, 1000));
-      } catch (e) {
-        console.warn(e);
-      } finally {
-        setReady(true);
-      }
-    };
-    prepare();
+    setTimeout(() => setReady(true), 800);
   }, []);
 
-  const onLayout = useCallback(async () => {
-    if (ready) {
-      await SplashScreen.hideAsync();
+  const onLayout = useCallback(() => {
+    if (ready && SplashScreen) {
+      SplashScreen.hideAsync().catch(() => {});
     }
   }, [ready]);
 

@@ -15,7 +15,6 @@ import ScreenWrapper from "../components/ScreenWrapper";
 import ContentRow from "../components/ContentRow";
 import { getMovieDetails, getMovieCredits, getMovieSimilar, img } from "../api/tmdb";
 import { addToWatchlist, removeFromWatchlist, isInWatchlist } from "../utils/watchlist";
-import { MOVIE_PROVIDERS } from "../api/providers";
 import { COLORS, RADIUS, SPACING } from "../utils/theme";
 
 const { width, height } = Dimensions.get("window");
@@ -136,7 +135,6 @@ export default function MovieDetailScreen({ route, navigation }) {
                   poster: img(movie.poster_path),
                   contentId: id,
                   contentType: "movie",
-                  providers: MOVIE_PROVIDERS,
                   episode: 1,
                   totalEpisodes: 1,
                   totalSeasons: 1,
