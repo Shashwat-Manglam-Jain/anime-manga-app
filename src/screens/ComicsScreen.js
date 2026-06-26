@@ -31,7 +31,7 @@ export default function ComicsScreen({ navigation }) {
     setLoading(true);
     try {
       const items = await browseComics(p);
-      setData(p === 1 ? items : (prev) => [...prev, ...items]);
+      setData((prev) => (p === 1 ? items : [...prev, ...items]));
     } catch (err) {
       console.log("ComicK browse error:", err.message);
     }

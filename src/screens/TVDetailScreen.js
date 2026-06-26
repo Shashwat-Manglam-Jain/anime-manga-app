@@ -86,7 +86,6 @@ export default function TVDetailScreen({ route, navigation }) {
       contentId: id,
       contentType: "tv",
       providers: MOVIE_PROVIDERS,
-      buildUrl: (provider, s, e) => provider.buildTvUrl(id, s, e),
       season,
       episode,
       totalEpisodes: epsInSeason,

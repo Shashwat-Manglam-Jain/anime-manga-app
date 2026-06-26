@@ -4,6 +4,7 @@ import {
   Text,
   Image,
   FlatList,
+  ScrollView,
   TouchableOpacity,
   StyleSheet,
   Dimensions,
@@ -99,14 +100,14 @@ export default function WatchlistScreen({ navigation }) {
     return (
       <View style={styles.cwSection}>
         <Text style={styles.cwTitle}>Continue Watching</Text>
-        <FlatList
+        <ScrollView
           horizontal
-          data={continueItems}
-          keyExtractor={(item) => `cw-${item.type}-${item.id}`}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: SPACING.lg }}
-          renderItem={({ item }) => (
+        >
+          {continueItems.map((item) => (
             <TouchableOpacity
+              key={`cw-${item.type}-${item.id}`}
               style={styles.cwCard}
               activeOpacity={0.7}
               onPress={() => goDetail(item)}
@@ -124,8 +125,8 @@ export default function WatchlistScreen({ navigation }) {
                 <Text style={styles.cwEpisode}>{item.episodeInfo}</Text>
               ) : null}
             </TouchableOpacity>
-          )}
-        />
+          ))}
+        </ScrollView>
       </View>
     );
   };

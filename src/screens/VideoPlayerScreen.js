@@ -20,6 +20,16 @@ import { COLORS, RADIUS, SPACING } from "../utils/theme";
 
 const { width } = Dimensions.get("window");
 
+function buildStreamUrl(provider, contentType, isAnime, contentId, season, episode, lang) {
+  if (isAnime) {
+    return provider.buildMalUrl?.(contentId, episode, lang) || "";
+  }
+  if (contentType === "tv") {
+    return provider.buildTvUrl?.(contentId, season, episode) || "";
+  }
+  return provider.buildMovieUrl?.(contentId) || "";
+}
+
 export default function VideoPlayerScreen({ route, navigation }) {
   const {
     title,
@@ -27,7 +37,6 @@ export default function VideoPlayerScreen({ route, navigation }) {
     contentId,
     contentType,
     providers,
-    buildUrl,
     episodeInfo,
     season,
     episode,
@@ -45,12 +54,14 @@ export default function VideoPlayerScreen({ route, navigation }) {
 
   useEffect(() => {
     const loadPref = async () => {
-      const type = isAnime ? "anime" : contentType === "tv" ? "tv" : "movie";
-      const pref = await getPreferredServer(type);
-      if (pref) {
-        const idx = providers.findIndex((p) => p.id === pref);
-        if (idx >= 0) setProviderIdx(idx);
-      }
+      try {
+        const type = isAnime ? "anime" : contentType === "tv" ? "tv" : "movie";
+        const pref = await getPreferredServer(type);
+        if (pref) {
+          const idx = providers.findIndex((p) => p.id === pref);
+          if (idx >= 0) setProviderIdx(idx);
+        }
+      } catch (e) {}
     };
     loadPref();
   }, []);
@@ -67,14 +78,15 @@ export default function VideoPlayerScreen({ route, navigation }) {
           : totalSeasons > 1
             ? `S${currentSeason} E${currentEpisode}`
             : undefined,
-      });
+      }).catch(() => {});
     }
   }, [currentEpisode, currentSeason]);
 
   const currentProvider = providers[providerIdx];
-  const streamUrl = buildUrl
-    ? buildUrl(currentProvider, currentSeason, currentEpisode, lang)
-    : currentProvider.url;
+  const streamUrl = buildStreamUrl(
+    currentProvider, contentType, isAnime, contentId,
+    currentSeason, currentEpisode, lang
+  );
 
   const epsCount = seasonEpisodeCounts
     ? (seasonEpisodeCounts[currentSeason] || totalEpisodes || 24)
@@ -84,8 +96,10 @@ export default function VideoPlayerScreen({ route, navigation }) {
   const handleProviderChange = async (idx) => {
     setProviderIdx(idx);
     setLoading(true);
-    const type = isAnime ? "anime" : contentType === "tv" ? "tv" : "movie";
-    await setPreferredServer(type, providers[idx].id);
+    try {
+      const type = isAnime ? "anime" : contentType === "tv" ? "tv" : "movie";
+      await setPreferredServer(type, providers[idx].id);
+    } catch (e) {}
   };
 
   const handleSeasonChange = (s) => {
@@ -119,11 +133,10 @@ export default function VideoPlayerScreen({ route, navigation }) {
           source={{ uri: streamUrl }}
           style={styles.webview}
           allowsFullscreenVideo
-          mediaPlaybackRequiresUserAction={false}
-          javaScriptEnabled
-          domStorageEnabled
+          allowsInlineMediaPlayback
           onLoadEnd={() => setLoading(false)}
           onLoadStart={() => setLoading(true)}
+          onError={() => setLoading(false)}
         />
       </View>
 

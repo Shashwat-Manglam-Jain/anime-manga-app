@@ -6,7 +6,6 @@ import {
   Text,
   Image,
   TouchableOpacity,
-  FlatList,
   StyleSheet,
   Dimensions,
 } from "react-native";
@@ -153,14 +152,14 @@ export default function HomeScreen({ navigation }) {
         {continueItems.length > 0 && (
           <View style={styles.cwSection}>
             <Text style={styles.cwSectionTitle}>Continue Watching</Text>
-            <FlatList
+            <ScrollView
               horizontal
-              data={continueItems.slice(0, 10)}
-              keyExtractor={(item) => `cw-${item.type}-${item.id}`}
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingHorizontal: SPACING.lg }}
-              renderItem={({ item }) => (
+            >
+              {continueItems.slice(0, 10).map((item) => (
                 <TouchableOpacity
+                  key={`cw-${item.type}-${item.id}`}
                   style={styles.cwCard}
                   activeOpacity={0.7}
                   onPress={() => goDetail(item)}
@@ -177,8 +176,8 @@ export default function HomeScreen({ navigation }) {
                     <Text style={styles.cwEpisode}>{item.episodeInfo}</Text>
                   ) : null}
                 </TouchableOpacity>
-              )}
-            />
+              ))}
+            </ScrollView>
           </View>
         )}
 

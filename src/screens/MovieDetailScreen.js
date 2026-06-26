@@ -137,7 +137,6 @@ export default function MovieDetailScreen({ route, navigation }) {
                   contentId: id,
                   contentType: "movie",
                   providers: MOVIE_PROVIDERS,
-                  buildUrl: (provider) => provider.buildMovieUrl(id),
                   episode: 1,
                   totalEpisodes: 1,
                   totalSeasons: 1,

@@ -74,8 +74,6 @@ export default function AnimeDetailScreen({ route, navigation }) {
       contentId: id,
       contentType: "anime",
       providers: ANIME_PROVIDERS,
-      buildUrl: (provider, _s, episode, language) =>
-        provider.buildMalUrl(id, episode, language || lang),
       episode: ep,
       totalEpisodes: totalEps,
       totalSeasons: 1,
