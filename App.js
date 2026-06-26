@@ -1,14 +1,6 @@
+import React from "react";
+import Navigation from "./src/navigation";
 
-import React from 'react'
-import Stacknavigation from './src/Navigation'
-
-
-const App = () => {
-  return (
-    <>
-<Stacknavigation/>
-    </>
-  )
+export default function App() {
+  return <Navigation />;
 }
-
-export default App

@@ -1,38 +1,25 @@
 {
   "expo": {
-    "name": "netflixclone",
-    "slug": "netflixclone",
-    "version": "1.0.0",
+    "name": "SmjStreamz",
+    "slug": "anime-manga-app",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "cover",
-      "backgroundColor": "#000000"
+      "backgroundColor": "#0a0a0f"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.smj.streamz",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#000000"
-      },
-      "package": "com.shashwat100k.netflixclone"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      "expo-font"
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "71fcfbbd-3814-419f-a842-67e12520a2fa"
+        "backgroundColor": "#0a0a0f"
       }
     }
   }
