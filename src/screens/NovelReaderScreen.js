@@ -10,9 +10,11 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import ScreenWrapper from "../components/ScreenWrapper";
 import { readNovelBinChapter } from "../api/novels";
-import { COLORS, SPACING, RADIUS } from "../utils/theme";
+import { SPACING, RADIUS } from "../utils/theme";
+import { useTheme } from "../utils/ThemeContext";
 
 export default function NovelReaderScreen({ route, navigation }) {
+  const { colors } = useTheme();
   const { chapterId, chapterTitle, novelTitle } = route.params;
   const [content, setContent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -41,29 +43,29 @@ export default function NovelReaderScreen({ route, navigation }) {
 
   return (
     <ScreenWrapper>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderColor: colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <View style={{ flex: 1, marginHorizontal: SPACING.md }}>
-          <Text style={styles.headerTitle} numberOfLines={1}>{novelTitle}</Text>
-          <Text style={styles.headerSub} numberOfLines={1}>
+          <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>{novelTitle}</Text>
+          <Text style={[styles.headerSub, { color: colors.textMuted }]} numberOfLines={1}>
             {content?.title || chapterTitle}
           </Text>
         </View>
         <View style={styles.fontControls}>
           <TouchableOpacity onPress={() => setFontSize(Math.max(12, fontSize - 2))}>
-            <Text style={styles.fontBtn}>A-</Text>
+            <Text style={[styles.fontBtn, { color: colors.text, backgroundColor: colors.card }]}>A-</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setFontSize(Math.min(24, fontSize + 2))}>
-            <Text style={styles.fontBtn}>A+</Text>
+            <Text style={[styles.fontBtn, { color: colors.text, backgroundColor: colors.card }]}>A+</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {loading ? (
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color={COLORS.accent} />
+          <ActivityIndicator size="large" color={colors.accent} />
         </View>
       ) : (
         <ScrollView
@@ -71,20 +73,20 @@ export default function NovelReaderScreen({ route, navigation }) {
           contentContainerStyle={styles.readerContent}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={[styles.chapterTitle]}>{content?.title}</Text>
-          <Text style={[styles.bodyText, { fontSize }]}>{content?.content}</Text>
+          <Text style={[styles.chapterTitle, { color: colors.text }]}>{content?.title}</Text>
+          <Text style={[styles.bodyText, { color: colors.textSecondary, fontSize }]}>{content?.content}</Text>
 
-          <View style={styles.navRow}>
+          <View style={[styles.navRow, { borderColor: colors.border }]}>
             {content?.prevChapter ? (
-              <TouchableOpacity style={styles.navBtn} onPress={() => goChapter(content.prevChapter)}>
-                <Ionicons name="chevron-back" size={16} color={COLORS.text} />
-                <Text style={styles.navText}>Previous</Text>
+              <TouchableOpacity style={[styles.navBtn, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => goChapter(content.prevChapter)}>
+                <Ionicons name="chevron-back" size={16} color={colors.text} />
+                <Text style={[styles.navText, { color: colors.text }]}>Previous</Text>
               </TouchableOpacity>
             ) : <View />}
             {content?.nextChapter ? (
-              <TouchableOpacity style={styles.navBtn} onPress={() => goChapter(content.nextChapter)}>
-                <Text style={styles.navText}>Next</Text>
-                <Ionicons name="chevron-forward" size={16} color={COLORS.text} />
+              <TouchableOpacity style={[styles.navBtn, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => goChapter(content.nextChapter)}>
+                <Text style={[styles.navText, { color: colors.text }]}>Next</Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.text} />
               </TouchableOpacity>
             ) : <View />}
           </View>
@@ -103,16 +105,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     borderBottomWidth: 1,
-    borderColor: COLORS.border,
   },
-  headerTitle: { color: COLORS.text, fontSize: 14, fontWeight: "600" },
-  headerSub: { color: COLORS.textMuted, fontSize: 12 },
+  headerTitle: { fontSize: 14, fontWeight: "600" },
+  headerSub: { fontSize: 12 },
   fontControls: { flexDirection: "row", gap: SPACING.sm },
   fontBtn: {
-    color: COLORS.text,
     fontSize: 16,
     fontWeight: "700",
-    backgroundColor: COLORS.card,
     paddingHorizontal: SPACING.md,
     paddingVertical: 4,
     borderRadius: RADIUS.sm,
@@ -122,14 +121,12 @@ const styles = StyleSheet.create({
   reader: { flex: 1 },
   readerContent: { paddingHorizontal: SPACING.xl, paddingTop: SPACING.xl },
   chapterTitle: {
-    color: COLORS.text,
     fontSize: 20,
     fontWeight: "700",
     marginBottom: SPACING.xl,
     textAlign: "center",
   },
   bodyText: {
-    color: COLORS.textSecondary,
     lineHeight: 28,
   },
   navRow: {
@@ -138,18 +135,15 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xxl,
     paddingTop: SPACING.lg,
     borderTopWidth: 1,
-    borderColor: COLORS.border,
   },
   navBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: COLORS.card,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
     borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
-  navText: { color: COLORS.text, fontSize: 14, fontWeight: "600" },
+  navText: { fontSize: 14, fontWeight: "600" },
 });

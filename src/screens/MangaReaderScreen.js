@@ -12,11 +12,13 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import ScreenWrapper from "../components/ScreenWrapper";
 import { getChapterPages } from "../api/mangadex";
-import { COLORS, SPACING, RADIUS } from "../utils/theme";
+import { SPACING, RADIUS } from "../utils/theme";
+import { useTheme } from "../utils/ThemeContext";
 
 const { width } = Dimensions.get("window");
 
 export default function MangaReaderScreen({ route, navigation }) {
+  const { colors } = useTheme();
   const { chapterId, chapterNum, mangaTitle } = route.params;
   const [pages, setPages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,28 +38,31 @@ export default function MangaReaderScreen({ route, navigation }) {
   if (loading)
     return (
       <ScreenWrapper style={{ justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color={COLORS.accent} />
+        <ActivityIndicator size="large" color={colors.accent} />
       </ScreenWrapper>
     );
 
   return (
     <ScreenWrapper>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderColor: colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <View style={{ flex: 1, marginHorizontal: SPACING.md }}>
-          <Text style={styles.headerTitle} numberOfLines={1}>
+          <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
             {mangaTitle}
           </Text>
-          <Text style={styles.headerSub}>Chapter {chapterNum}</Text>
+          <Text style={[styles.headerSub, { color: colors.textMuted }]}>Chapter {chapterNum}</Text>
         </View>
-        <Text style={styles.pageCount}>{pages.length} pages</Text>
+        <Text style={[styles.pageCount, { color: colors.textMuted }]}>{pages.length} pages</Text>
       </View>
       <FlatList
         data={pages}
         keyExtractor={(_, i) => String(i)}
         showsVerticalScrollIndicator={false}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={12}
+        windowSize={7}
         renderItem={({ item, index }) => (
           <View style={styles.pageWrap}>
             <Image
@@ -65,7 +70,7 @@ export default function MangaReaderScreen({ route, navigation }) {
               style={styles.page}
               resizeMode="contain"
             />
-            <Text style={styles.pageNum}>{index + 1}/{pages.length}</Text>
+            <Text style={[styles.pageNum, { color: colors.textMuted }]}>{index + 1}/{pages.length}</Text>
           </View>
         )}
       />
@@ -80,15 +85,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     borderBottomWidth: 1,
-    borderColor: COLORS.border,
   },
-  headerTitle: { color: COLORS.text, fontSize: 14, fontWeight: "600" },
-  headerSub: { color: COLORS.textMuted, fontSize: 12 },
-  pageCount: { color: COLORS.textMuted, fontSize: 12 },
+  headerTitle: { fontSize: 14, fontWeight: "600" },
+  headerSub: { fontSize: 12 },
+  pageCount: { fontSize: 12 },
   pageWrap: { alignItems: "center", marginBottom: 2 },
   page: { width, height: width * 1.5 },
   pageNum: {
-    color: COLORS.textMuted,
     fontSize: 11,
     marginTop: 2,
     marginBottom: SPACING.sm,

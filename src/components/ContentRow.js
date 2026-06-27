@@ -1,16 +1,34 @@
-import React from "react";
+import React, { memo } from "react";
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from "react-native";
 import ContentCard from "./ContentCard";
-import { COLORS, SPACING } from "../utils/theme";
+import { SkeletonRow } from "./SkeletonLoader";
+import { useTheme } from "../utils/ThemeContext";
+import { SPACING } from "../utils/theme";
 
-export default function ContentRow({ title, data, onPressItem, onSeeAll, badge }) {
+function ContentRow({ title, data, onPressItem, onSeeAll, badge, loading }) {
+  const { colors } = useTheme();
+
+  if (loading || (!data || data.length === 0)) {
+    if (loading) {
+      return (
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+          </View>
+          <SkeletonRow />
+        </View>
+      );
+    }
+    return null;
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>{title}</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
         {onSeeAll ? (
           <TouchableOpacity onPress={onSeeAll}>
-            <Text style={styles.seeAll}>See All</Text>
+            <Text style={[styles.seeAll, { color: colors.accent }]}>See All</Text>
           </TouchableOpacity>
         ) : null}
       </View>
@@ -20,6 +38,9 @@ export default function ContentRow({ title, data, onPressItem, onSeeAll, badge }
         data={data}
         keyExtractor={(item, i) => `${item.id || i}`}
         contentContainerStyle={{ paddingHorizontal: SPACING.lg }}
+        removeClippedSubviews
+        maxToRenderPerBatch={6}
+        windowSize={5}
         renderItem={({ item }) => (
           <ContentCard
             poster={item.poster}
@@ -34,6 +55,8 @@ export default function ContentRow({ title, data, onPressItem, onSeeAll, badge }
   );
 }
 
+export default memo(ContentRow);
+
 const styles = StyleSheet.create({
   container: { marginBottom: SPACING.xl },
   header: {
@@ -44,12 +67,10 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   title: {
-    color: COLORS.text,
     fontSize: 18,
     fontWeight: "700",
   },
   seeAll: {
-    color: COLORS.accent,
     fontSize: 13,
     fontWeight: "600",
   },

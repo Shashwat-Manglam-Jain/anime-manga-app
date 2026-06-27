@@ -20,7 +20,8 @@ import {
   getContinueWatching,
   removeContinueWatching,
 } from "../utils/watchlist";
-import { COLORS, RADIUS, SPACING } from "../utils/theme";
+import { RADIUS, SPACING } from "../utils/theme";
+import { useTheme } from "../utils/ThemeContext";
 
 const { width } = Dimensions.get("window");
 const CW_CARD_W = width * 0.38;
@@ -36,6 +37,7 @@ const TABS = [
 ];
 
 export default function WatchlistScreen({ navigation }) {
+  const { colors } = useTheme();
   const [items, setItems] = useState([]);
   const [continueItems, setContinueItems] = useState([]);
   const [tab, setTab] = useState("all");
@@ -99,7 +101,7 @@ export default function WatchlistScreen({ navigation }) {
     if (continueItems.length === 0) return null;
     return (
       <View style={styles.cwSection}>
-        <Text style={styles.cwTitle}>Continue Watching</Text>
+        <Text style={[styles.cwTitle, { color: colors.text }]}>Continue Watching</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -115,14 +117,14 @@ export default function WatchlistScreen({ navigation }) {
             >
               <Image
                 source={{ uri: item.poster || "https://via.placeholder.com/200x300?text=?" }}
-                style={styles.cwPoster}
+                style={[styles.cwPoster, { backgroundColor: colors.card }]}
               />
               <View style={styles.cwOverlay}>
                 <Ionicons name="play-circle" size={32} color="rgba(255,255,255,0.9)" />
               </View>
-              <Text style={styles.cwCardTitle} numberOfLines={2}>{item.title}</Text>
+              <Text style={[styles.cwCardTitle, { color: colors.text }]} numberOfLines={2}>{item.title}</Text>
               {item.episodeInfo ? (
-                <Text style={styles.cwEpisode}>{item.episodeInfo}</Text>
+                <Text style={[styles.cwEpisode, { color: colors.accent }]}>{item.episodeInfo}</Text>
               ) : null}
             </TouchableOpacity>
           ))}
@@ -138,7 +140,7 @@ export default function WatchlistScreen({ navigation }) {
         <FilterTabs tabs={TABS} active={tab} onPress={setTab} />
       </View>
       {filtered.length > 0 && (
-        <Text style={styles.countText}>
+        <Text style={[styles.countText, { color: colors.textMuted }]}>
           {filtered.length} item{filtered.length !== 1 ? "s" : ""}
         </Text>
       )}
@@ -147,13 +149,13 @@ export default function WatchlistScreen({ navigation }) {
 
   return (
     <ScreenWrapper>
-      <Text style={styles.heading}>My Library</Text>
+      <Text style={[styles.heading, { color: colors.text }]}>My Library</Text>
 
       {items.length === 0 && continueItems.length === 0 ? (
         <View style={styles.empty}>
-          <Ionicons name="bookmark-outline" size={56} color={COLORS.textMuted} />
-          <Text style={styles.emptyTitle}>Your library is empty</Text>
-          <Text style={styles.emptyText}>
+          <Ionicons name="bookmark-outline" size={56} color={colors.textMuted} />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>Your library is empty</Text>
+          <Text style={[styles.emptyText, { color: colors.textMuted }]}>
             Bookmark anime, movies, manga and more to access them here
           </Text>
         </View>
@@ -166,7 +168,7 @@ export default function WatchlistScreen({ navigation }) {
           ListEmptyComponent={
             items.length > 0 ? (
               <View style={styles.emptyFilter}>
-                <Text style={styles.emptyFilterText}>
+                <Text style={[styles.emptyFilterText, { color: colors.textMuted }]}>
                   No {tab} items bookmarked yet
                 </Text>
               </View>
@@ -174,23 +176,23 @@ export default function WatchlistScreen({ navigation }) {
           }
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={styles.row}
+              style={[styles.row, { borderColor: colors.border }]}
               activeOpacity={0.7}
               onPress={() => goDetail(item)}
             >
               <Image
                 source={{ uri: item.poster || "https://via.placeholder.com/200x300?text=?" }}
-                style={styles.poster}
+                style={[styles.poster, { backgroundColor: colors.card }]}
               />
               <View style={styles.info}>
-                <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
-                <View style={[styles.typeBadge, { backgroundColor: (typeColors[item.type] || COLORS.accent) + "20" }]}>
-                  <Text style={[styles.typeText, { color: typeColors[item.type] || COLORS.accent }]}>
+                <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>{item.title}</Text>
+                <View style={[styles.typeBadge, { backgroundColor: (typeColors[item.type] || colors.accent) + "20" }]}>
+                  <Text style={[styles.typeText, { color: typeColors[item.type] || colors.accent }]}>
                     {item.type}
                   </Text>
                 </View>
                 {item.addedAt ? (
-                  <Text style={styles.dateText}>
+                  <Text style={[styles.dateText, { color: colors.textMuted }]}>
                     Added {new Date(item.addedAt).toLocaleDateString()}
                   </Text>
                 ) : null}
@@ -199,7 +201,7 @@ export default function WatchlistScreen({ navigation }) {
                 style={styles.removeBtn}
                 onPress={() => handleRemove(item)}
               >
-                <Ionicons name="trash-outline" size={20} color={COLORS.red} />
+                <Ionicons name="trash-outline" size={20} color={colors.red} />
               </TouchableOpacity>
             </TouchableOpacity>
           )}
@@ -211,7 +213,6 @@ export default function WatchlistScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   heading: {
-    color: COLORS.text,
     fontSize: 26,
     fontWeight: "800",
     paddingHorizontal: SPACING.lg,
@@ -220,7 +221,6 @@ const styles = StyleSheet.create({
   },
   cwSection: { marginTop: SPACING.sm },
   cwTitle: {
-    color: COLORS.text,
     fontSize: 17,
     fontWeight: "700",
     paddingHorizontal: SPACING.lg,
@@ -234,7 +234,6 @@ const styles = StyleSheet.create({
     width: CW_CARD_W,
     height: CW_CARD_W * 0.56,
     borderRadius: RADIUS.md,
-    backgroundColor: COLORS.card,
   },
   cwOverlay: {
     position: "absolute",
@@ -247,11 +246,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.3)",
   },
-  cwCardTitle: { color: COLORS.text, fontSize: 12, fontWeight: "600", marginTop: 4 },
-  cwEpisode: { color: COLORS.accent, fontSize: 11, fontWeight: "500" },
+  cwCardTitle: { fontSize: 12, fontWeight: "600", marginTop: 4 },
+  cwEpisode: { fontSize: 11, fontWeight: "500" },
   filterWrap: { marginTop: SPACING.md },
   countText: {
-    color: COLORS.textMuted,
     fontSize: 13,
     paddingHorizontal: SPACING.lg,
     marginBottom: SPACING.sm,
@@ -263,13 +261,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   emptyTitle: {
-    color: COLORS.text,
     fontSize: 18,
     fontWeight: "700",
     marginTop: SPACING.lg,
   },
   emptyText: {
-    color: COLORS.textMuted,
     fontSize: 14,
     textAlign: "center",
     marginTop: SPACING.sm,
@@ -279,7 +275,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   emptyFilterText: {
-    color: COLORS.textMuted,
     fontSize: 15,
   },
   row: {
@@ -288,16 +283,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     borderBottomWidth: 1,
-    borderColor: COLORS.border,
   },
   poster: {
     width: 60,
     height: 85,
     borderRadius: RADIUS.sm,
-    backgroundColor: COLORS.card,
   },
   info: { flex: 1, marginLeft: SPACING.md },
-  title: { color: COLORS.text, fontSize: 15, fontWeight: "600" },
+  title: { fontSize: 15, fontWeight: "600" },
   typeBadge: {
     alignSelf: "flex-start",
     paddingHorizontal: SPACING.sm,
@@ -311,7 +304,6 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
   dateText: {
-    color: COLORS.textMuted,
     fontSize: 11,
     marginTop: 3,
   },

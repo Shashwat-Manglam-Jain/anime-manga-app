@@ -3,9 +3,11 @@ import { Text, StyleSheet } from "react-native";
 import ScreenWrapper from "../components/ScreenWrapper";
 import GridView from "../components/GridView";
 import { getPopularNovels } from "../api/novels";
-import { COLORS, SPACING } from "../utils/theme";
+import { SPACING } from "../utils/theme";
+import { useTheme } from "../utils/ThemeContext";
 
 export default function NovelsScreen({ navigation }) {
+  const { colors } = useTheme();
   const [data, setData] = useState([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -42,7 +44,7 @@ export default function NovelsScreen({ navigation }) {
 
   return (
     <ScreenWrapper>
-      <Text style={styles.heading}>Light Novels</Text>
+      <Text style={[styles.heading, { color: colors.text }]}>Light Novels</Text>
       <GridView
         data={data}
         loading={loading}
@@ -56,7 +58,6 @@ export default function NovelsScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   heading: {
-    color: COLORS.text,
     fontSize: 26,
     fontWeight: "800",
     paddingHorizontal: SPACING.lg,

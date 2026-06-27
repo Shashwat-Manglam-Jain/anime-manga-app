@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import {
   View,
   Text,
@@ -7,9 +7,10 @@ import {
   FlatList,
   StyleSheet,
   Dimensions,
-  ActivityIndicator,
 } from "react-native";
-import { COLORS, RADIUS, SPACING } from "../utils/theme";
+import { SkeletonGrid } from "./SkeletonLoader";
+import { useTheme } from "../utils/ThemeContext";
+import { RADIUS, SPACING } from "../utils/theme";
 
 const { width } = Dimensions.get("window");
 const COLS = 3;
@@ -17,14 +18,18 @@ const GAP = SPACING.sm;
 const CARD_W = (width - SPACING.lg * 2 - GAP * (COLS - 1)) / COLS;
 const CARD_H = CARD_W * 1.45;
 
-export default function GridView({
-  data,
-  onPressItem,
-  onEndReached,
-  loading,
-  badge,
-  ListHeaderComponent,
-}) {
+function GridView({ data, onPressItem, onEndReached, loading, badge, ListHeaderComponent }) {
+  const { colors } = useTheme();
+
+  if (loading && (!data || data.length === 0)) {
+    return (
+      <View>
+        {ListHeaderComponent}
+        <SkeletonGrid count={12} />
+      </View>
+    );
+  }
+
   return (
     <FlatList
       data={data}
@@ -35,38 +40,29 @@ export default function GridView({
       showsVerticalScrollIndicator={false}
       onEndReached={onEndReached}
       onEndReachedThreshold={0.5}
+      removeClippedSubviews
+      maxToRenderPerBatch={12}
+      windowSize={7}
       ListHeaderComponent={ListHeaderComponent}
-      ListFooterComponent={
-        loading ? (
-          <ActivityIndicator
-            color={COLORS.accent}
-            size="large"
-            style={{ padding: 20 }}
-          />
-        ) : null
-      }
+      ListFooterComponent={loading ? <SkeletonGrid count={3} /> : null}
       renderItem={({ item }) => (
         <TouchableOpacity
           style={styles.card}
           activeOpacity={0.7}
           onPress={() => onPressItem?.(item)}
         >
-          <View style={styles.imgWrap}>
+          <View style={[styles.imgWrap, { backgroundColor: colors.card }]}>
             <Image
-              source={{
-                uri:
-                  item.poster ||
-                  "https://via.placeholder.com/300x450?text=No+Image",
-              }}
+              source={{ uri: item.poster || "https://via.placeholder.com/300x450?text=No+Image" }}
               style={styles.img}
             />
             {badge?.(item) ? (
-              <View style={styles.badge}>
+              <View style={[styles.badge, { backgroundColor: colors.accent }]}>
                 <Text style={styles.badgeText}>{badge(item)}</Text>
               </View>
             ) : null}
           </View>
-          <Text style={styles.title} numberOfLines={2}>
+          <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
             {item.title}
           </Text>
         </TouchableOpacity>
@@ -74,6 +70,8 @@ export default function GridView({
     />
   );
 }
+
+export default memo(GridView);
 
 const styles = StyleSheet.create({
   grid: { paddingHorizontal: SPACING.lg, paddingBottom: 100 },
@@ -84,21 +82,18 @@ const styles = StyleSheet.create({
     height: CARD_H,
     borderRadius: RADIUS.md,
     overflow: "hidden",
-    backgroundColor: COLORS.card,
   },
   img: { width: "100%", height: "100%", resizeMode: "cover" },
   badge: {
     position: "absolute",
     top: 4,
     left: 4,
-    backgroundColor: COLORS.accent,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: RADIUS.sm,
   },
   badgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
   title: {
-    color: COLORS.text,
     fontSize: 12,
     fontWeight: "500",
     marginTop: 4,

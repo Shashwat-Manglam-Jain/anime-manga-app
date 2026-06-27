@@ -1,5 +1,26 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { useTheme } from "../utils/ThemeContext";
+import { RADIUS, SPACING } from "../utils/theme";
+
+function ErrorFallback({ error, onReset }) {
+  const { colors } = useTheme();
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.bg }]}>
+      <Text style={[styles.title, { color: colors.text }]}>Something went wrong</Text>
+      <Text style={[styles.message, { color: colors.textMuted }]}>
+        {error?.message || "Unknown error"}
+      </Text>
+      <TouchableOpacity
+        style={[styles.button, { backgroundColor: colors.accent }]}
+        onPress={onReset}
+      >
+        <Text style={styles.buttonText}>Try Again</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
 
 export default class ErrorBoundary extends React.Component {
   state = { hasError: false, error: null };
@@ -11,16 +32,10 @@ export default class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <View style={styles.container}>
-          <Text style={styles.title}>Something went wrong</Text>
-          <Text style={styles.message}>{this.state.error?.message || "Unknown error"}</Text>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => this.setState({ hasError: false, error: null })}
-          >
-            <Text style={styles.buttonText}>Try Again</Text>
-          </TouchableOpacity>
-        </View>
+        <ErrorFallback
+          error={this.state.error}
+          onReset={() => this.setState({ hasError: false, error: null })}
+        />
       );
     }
     return this.props.children;
@@ -30,28 +45,24 @@ export default class ErrorBoundary extends React.Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0a0a0f",
     justifyContent: "center",
     alignItems: "center",
     padding: 40,
   },
   title: {
-    color: "#e4e4e7",
     fontSize: 20,
     fontWeight: "700",
-    marginBottom: 12,
+    marginBottom: SPACING.md,
   },
   message: {
-    color: "#6b7280",
     fontSize: 14,
     textAlign: "center",
-    marginBottom: 24,
+    marginBottom: SPACING.xl,
   },
   button: {
-    backgroundColor: "#8b5cf6",
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: RADIUS.md,
   },
   buttonText: {
     color: "#fff",

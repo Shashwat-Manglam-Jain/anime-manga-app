@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, memo } from "react";
 import {
   View,
   Text,
@@ -10,12 +10,14 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, RADIUS, SPACING } from "../utils/theme";
+import { useTheme } from "../utils/ThemeContext";
+import { RADIUS, SPACING } from "../utils/theme";
 
 const { width, height } = Dimensions.get("window");
 const CAROUSEL_H = height * 0.52;
 
-export default function FeaturedCarousel({ items, onPress }) {
+function FeaturedCarousel({ items, onPress }) {
+  const { colors } = useTheme();
   const flatRef = useRef(null);
   const [activeIdx, setActiveIdx] = useState(0);
 
@@ -40,6 +42,7 @@ export default function FeaturedCarousel({ items, onPress }) {
         showsHorizontalScrollIndicator={false}
         data={items}
         keyExtractor={(_, i) => String(i)}
+        removeClippedSubviews
         onMomentumScrollEnd={(e) => {
           setActiveIdx(Math.round(e.nativeEvent.contentOffset.x / width));
         }}
@@ -51,14 +54,14 @@ export default function FeaturedCarousel({ items, onPress }) {
           >
             <Image source={{ uri: item.poster }} style={styles.image} />
             <LinearGradient
-              colors={["transparent", "rgba(10,10,15,0.7)", COLORS.bg]}
+              colors={["transparent", `${colors.bg}99`, colors.bg]}
               style={styles.gradient}
             />
             <View style={styles.info}>
               <View style={styles.tagsRow}>
                 {item.tags?.slice(0, 3).map((t, i) => (
-                  <View key={i} style={styles.tag}>
-                    <Text style={styles.tagText}>{t}</Text>
+                  <View key={i} style={[styles.tag, { backgroundColor: `${colors.accent}40` }]}>
+                    <Text style={[styles.tagText, { color: colors.accentLight }]}>{t}</Text>
                   </View>
                 ))}
               </View>
@@ -66,15 +69,12 @@ export default function FeaturedCarousel({ items, onPress }) {
                 {item.title}
               </Text>
               {item.subtitle ? (
-                <Text style={styles.subtitle} numberOfLines={1}>
+                <Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={1}>
                   {item.subtitle}
                 </Text>
               ) : null}
               <View style={styles.btnRow}>
-                <TouchableOpacity
-                  style={styles.playBtn}
-                  onPress={() => onPress?.(item)}
-                >
+                <TouchableOpacity style={styles.playBtn} onPress={() => onPress?.(item)}>
                   <Ionicons name="play" size={18} color="#000" />
                   <Text style={styles.playText}>Details</Text>
                 </TouchableOpacity>
@@ -87,13 +87,15 @@ export default function FeaturedCarousel({ items, onPress }) {
         {items.map((_, i) => (
           <View
             key={i}
-            style={[styles.dot, i === activeIdx && styles.dotActive]}
+            style={[styles.dot, i === activeIdx && [styles.dotActive, { backgroundColor: colors.accent }]]}
           />
         ))}
       </View>
     </View>
   );
 }
+
+export default memo(FeaturedCarousel);
 
 const styles = StyleSheet.create({
   container: { marginBottom: SPACING.lg },
@@ -114,15 +116,14 @@ const styles = StyleSheet.create({
   },
   tagsRow: { flexDirection: "row", marginBottom: SPACING.sm },
   tag: {
-    backgroundColor: "rgba(139,92,246,0.3)",
     paddingHorizontal: SPACING.sm,
     paddingVertical: 3,
     borderRadius: RADIUS.sm,
     marginRight: SPACING.xs,
   },
-  tagText: { color: COLORS.accentLight, fontSize: 11, fontWeight: "600" },
+  tagText: { fontSize: 11, fontWeight: "600" },
   title: { color: "#fff", fontSize: 26, fontWeight: "800", marginBottom: 4 },
-  subtitle: { color: COLORS.textSecondary, fontSize: 14, marginBottom: SPACING.md },
+  subtitle: { fontSize: 14, marginBottom: SPACING.md },
   btnRow: { flexDirection: "row", marginTop: SPACING.sm },
   playBtn: {
     flexDirection: "row",
@@ -146,5 +147,5 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.3)",
     marginHorizontal: 3,
   },
-  dotActive: { backgroundColor: COLORS.accent, width: 18 },
+  dotActive: { width: 18 },
 });

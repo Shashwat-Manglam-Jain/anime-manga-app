@@ -8,17 +8,17 @@ import {
   Image,
   StyleSheet,
   Dimensions,
-  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import ScreenWrapper from "../components/ScreenWrapper";
-import FilterTabs from "../components/FilterTabs";
+import { SkeletonGrid } from "../components/SkeletonLoader";
+import { useTheme } from "../utils/ThemeContext";
 import { searchAnime } from "../api/jikan";
 import { searchMovies, img } from "../api/tmdb";
 import { searchManga } from "../api/mangadex";
 import { searchComics } from "../api/comick";
 import { searchNovels } from "../api/novels";
-import { COLORS, RADIUS, SPACING } from "../utils/theme";
+import { RADIUS, SPACING } from "../utils/theme";
 
 const { width } = Dimensions.get("window");
 const COLS = 3;
@@ -34,6 +34,7 @@ const TABS = [
 ];
 
 export default function SearchScreen({ navigation }) {
+  const { colors } = useTheme();
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState("anime");
   const [results, setResults] = useState([]);
@@ -101,49 +102,74 @@ export default function SearchScreen({ navigation }) {
     setLoading(false);
   }, [query, tab]);
 
-  const goDetail = (item) => {
+  const goDetail = useCallback((item) => {
     if (item.type === "anime") navigation.navigate("AnimeDetail", { id: item.id });
     else if (item.type === "movie") navigation.navigate("MovieDetail", { id: item.id });
     else if (item.type === "tv") navigation.navigate("TVDetail", { id: item.id });
     else if (item.type === "manga") navigation.navigate("MangaDetail", { id: item.id });
     else if (item.type === "comic") navigation.navigate("ComicDetail", { id: item.id, title: item.title });
     else if (item.type === "novel") navigation.navigate("NovelDetail", { id: item.id, title: item.title });
-  };
+  }, [navigation]);
 
   return (
     <ScreenWrapper>
-      <Text style={styles.heading}>Search</Text>
-      <View style={styles.searchBar}>
-        <Ionicons name="search" size={20} color={COLORS.textMuted} />
-        <TextInput
-          style={styles.input}
-          placeholder="Search anime, movies, manga, comics..."
-          placeholderTextColor={COLORS.textMuted}
-          value={query}
-          onChangeText={setQuery}
-          onSubmitEditing={doSearch}
-          returnKeyType="search"
-        />
-        {query ? (
-          <TouchableOpacity onPress={() => { setQuery(""); setResults([]); setSearched(false); }}>
-            <Ionicons name="close-circle" size={20} color={COLORS.textMuted} />
-          </TouchableOpacity>
-        ) : null}
+      <Text style={[styles.heading, { color: colors.text }]}>Search</Text>
+
+      <View style={styles.searchRow}>
+        <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Ionicons name="search" size={20} color={colors.textMuted} />
+          <TextInput
+            style={[styles.input, { color: colors.text }]}
+            placeholder="Search anime, movies, manga..."
+            placeholderTextColor={colors.textMuted}
+            value={query}
+            onChangeText={setQuery}
+            onSubmitEditing={doSearch}
+            returnKeyType="search"
+          />
+          {query ? (
+            <TouchableOpacity onPress={() => { setQuery(""); setResults([]); setSearched(false); }}>
+              <Ionicons name="close-circle" size={20} color={colors.textMuted} />
+            </TouchableOpacity>
+          ) : null}
+        </View>
+        <TouchableOpacity style={[styles.searchBtn, { backgroundColor: colors.accent }]} onPress={doSearch}>
+          <Ionicons name="search" size={20} color="#fff" />
+        </TouchableOpacity>
       </View>
 
-      <FilterTabs tabs={TABS} active={tab} onPress={(t) => { setTab(t); setResults([]); setSearched(false); }} />
+      <View style={styles.tabRow}>
+        {TABS.map((t) => {
+          const isActive = t.value === tab;
+          return (
+            <TouchableOpacity
+              key={t.value}
+              style={[
+                styles.tab,
+                { backgroundColor: colors.card, borderColor: colors.border },
+                isActive && { backgroundColor: colors.accent, borderColor: colors.accent },
+              ]}
+              onPress={() => { setTab(t.value); setResults([]); setSearched(false); }}
+            >
+              <Text style={[styles.tabText, { color: colors.textSecondary }, isActive && { color: "#fff" }]}>
+                {t.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color={COLORS.accent} style={{ marginTop: 40 }} />
+        <SkeletonGrid count={9} />
       ) : results.length === 0 && searched ? (
         <View style={styles.emptyState}>
-          <Ionicons name="search-outline" size={48} color={COLORS.textMuted} />
-          <Text style={styles.emptyText}>No results found</Text>
+          <Ionicons name="search-outline" size={48} color={colors.textMuted} />
+          <Text style={[styles.emptyText, { color: colors.textMuted }]}>No results found</Text>
         </View>
       ) : results.length === 0 ? (
         <View style={styles.emptyState}>
-          <Ionicons name="sparkles-outline" size={48} color={COLORS.textMuted} />
-          <Text style={styles.emptyText}>Search for your favorite content</Text>
+          <Ionicons name="sparkles-outline" size={48} color={colors.textMuted} />
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Search for your favorite content</Text>
         </View>
       ) : (
         <FlatList
@@ -152,6 +178,10 @@ export default function SearchScreen({ navigation }) {
           keyExtractor={(item, i) => `${item.id}-${i}`}
           contentContainerStyle={{ paddingHorizontal: SPACING.lg, paddingBottom: 100 }}
           columnWrapperStyle={{ gap: GAP, marginBottom: GAP }}
+          showsVerticalScrollIndicator={false}
+          removeClippedSubviews
+          maxToRenderPerBatch={12}
+          windowSize={7}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={{ width: CARD_W }}
@@ -160,13 +190,13 @@ export default function SearchScreen({ navigation }) {
             >
               <Image
                 source={{ uri: item.poster || "https://via.placeholder.com/300x450?text=?" }}
-                style={styles.poster}
+                style={[styles.poster, { backgroundColor: colors.card }]}
               />
-              <Text style={styles.cardTitle} numberOfLines={2}>
+              <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={2}>
                 {item.title}
               </Text>
               {item.subtitle ? (
-                <Text style={styles.cardSub}>{item.subtitle}</Text>
+                <Text style={[styles.cardSub, { color: colors.textMuted }]}>{item.subtitle}</Text>
               ) : null}
             </TouchableOpacity>
           )}
@@ -178,34 +208,57 @@ export default function SearchScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   heading: {
-    color: COLORS.text,
     fontSize: 26,
     fontWeight: "800",
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.lg,
   },
-  searchBar: {
+  searchRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.card,
-    marginHorizontal: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     marginTop: SPACING.md,
+    gap: SPACING.sm,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: SPACING.md,
     borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    height: 46,
+    height: 44,
     gap: SPACING.sm,
   },
-  input: { flex: 1, color: COLORS.text, fontSize: 15 },
+  searchBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: RADIUS.md,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  input: { flex: 1, fontSize: 15 },
+  tabRow: {
+    flexDirection: "row",
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    gap: SPACING.xs,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 6,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+  tabText: { fontSize: 12, fontWeight: "600" },
   poster: {
     width: CARD_W,
     height: CARD_W * 1.45,
     borderRadius: RADIUS.md,
-    backgroundColor: COLORS.card,
   },
-  cardTitle: { color: COLORS.text, fontSize: 12, fontWeight: "500", marginTop: 4 },
-  cardSub: { color: COLORS.textMuted, fontSize: 11 },
+  cardTitle: { fontSize: 12, fontWeight: "500", marginTop: 4 },
+  cardSub: { fontSize: 11 },
   emptyState: { flex: 1, justifyContent: "center", alignItems: "center", marginTop: 80 },
-  emptyText: { color: COLORS.textMuted, fontSize: 16, marginTop: SPACING.md },
+  emptyText: { fontSize: 16, marginTop: SPACING.md },
 });

@@ -3,9 +3,11 @@ import { Text, StyleSheet } from "react-native";
 import ScreenWrapper from "../components/ScreenWrapper";
 import GridView from "../components/GridView";
 import { getPopularManga } from "../api/mangadex";
-import { COLORS, SPACING } from "../utils/theme";
+import { SPACING } from "../utils/theme";
+import { useTheme } from "../utils/ThemeContext";
 
 export default function MangaScreen({ navigation }) {
+  const { colors } = useTheme();
   const [data, setData] = useState([]);
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -42,7 +44,7 @@ export default function MangaScreen({ navigation }) {
 
   return (
     <ScreenWrapper>
-      <Text style={styles.heading}>Manga</Text>
+      <Text style={[styles.heading, { color: colors.text }]}>Manga</Text>
       <GridView
         data={data}
         loading={loading}
@@ -58,7 +60,6 @@ export default function MangaScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   heading: {
-    color: COLORS.text,
     fontSize: 26,
     fontWeight: "800",
     paddingHorizontal: SPACING.lg,

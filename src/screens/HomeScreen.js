@@ -14,17 +14,20 @@ import { useFocusEffect } from "@react-navigation/native";
 import ScreenWrapper from "../components/ScreenWrapper";
 import FeaturedCarousel from "../components/FeaturedCarousel";
 import ContentRow from "../components/ContentRow";
+import { SkeletonCarousel, SkeletonRow } from "../components/SkeletonLoader";
+import { useTheme } from "../utils/ThemeContext";
 import { getSeasonNow, getTopAnime } from "../api/jikan";
 import { getTrending, getPopular, getTrendingTV, img } from "../api/tmdb";
 import { getPopularManga } from "../api/mangadex";
 import { getPopularNovels } from "../api/novels";
-import { getContinueWatching, removeContinueWatching } from "../utils/watchlist";
-import { COLORS, RADIUS, SPACING } from "../utils/theme";
+import { getContinueWatching } from "../utils/watchlist";
+import { RADIUS, SPACING } from "../utils/theme";
 
 const { width } = Dimensions.get("window");
 const CW_CARD_W = width * 0.38;
 
 export default function HomeScreen({ navigation }) {
+  const { colors } = useTheme();
   const [featured, setFeatured] = useState([]);
   const [topAnime, setTopAnime] = useState([]);
   const [trendingMovies, setTrendingMovies] = useState([]);
@@ -33,6 +36,7 @@ export default function HomeScreen({ navigation }) {
   const [novels, setNovels] = useState([]);
   const [continueItems, setContinueItems] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
@@ -40,7 +44,7 @@ export default function HomeScreen({ navigation }) {
     }, [])
   );
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       const [season, top, movies, manga, tv, nov] = await Promise.all([
         getSeasonNow(1),
@@ -117,100 +121,115 @@ export default function HomeScreen({ navigation }) {
     } catch (err) {
       console.log("Home load error:", err.message);
     }
-  };
+    setInitialLoading(false);
+  }, []);
 
   useEffect(() => { load(); }, []);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     setRefreshing(true);
     await load();
     setRefreshing(false);
-  };
+  }, [load]);
 
-  const goDetail = (item) => {
+  const goDetail = useCallback((item) => {
     if (item.type === "anime") navigation.navigate("AnimeDetail", { id: item.id });
     else if (item.type === "movie") navigation.navigate("MovieDetail", { id: item.id });
     else if (item.type === "manga") navigation.navigate("MangaDetail", { id: item.id });
     else if (item.type === "tv") navigation.navigate("TVDetail", { id: item.id });
     else if (item.type === "novel") navigation.navigate("NovelDetail", { id: item.id, title: item.title });
-  };
+  }, [navigation]);
 
   return (
     <ScreenWrapper>
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={refresh}
-            tintColor={COLORS.accent}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.accent} />
         }
       >
-        <FeaturedCarousel items={featured} onPress={goDetail} />
+        {initialLoading && featured.length === 0 ? (
+          <>
+            <SkeletonCarousel />
+            <SkeletonRow />
+            <SkeletonRow />
+            <SkeletonRow />
+          </>
+        ) : (
+          <>
+            <FeaturedCarousel items={featured} onPress={goDetail} />
 
-        {continueItems.length > 0 && (
-          <View style={styles.cwSection}>
-            <Text style={styles.cwSectionTitle}>Continue Watching</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: SPACING.lg }}
-            >
-              {continueItems.slice(0, 10).map((item) => (
-                <TouchableOpacity
-                  key={`cw-${item.type}-${item.id}`}
-                  style={styles.cwCard}
-                  activeOpacity={0.7}
-                  onPress={() => goDetail(item)}
+            {continueItems.length > 0 && (
+              <View style={styles.cwSection}>
+                <Text style={[styles.cwSectionTitle, { color: colors.text }]}>Continue Watching</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingHorizontal: SPACING.lg }}
                 >
-                  <Image
-                    source={{ uri: item.poster || "https://via.placeholder.com/200x300?text=?" }}
-                    style={styles.cwPoster}
-                  />
-                  <View style={styles.cwOverlay}>
-                    <Ionicons name="play-circle" size={30} color="rgba(255,255,255,0.9)" />
-                  </View>
-                  <Text style={styles.cwTitle} numberOfLines={2}>{item.title}</Text>
-                  {item.episodeInfo ? (
-                    <Text style={styles.cwEpisode}>{item.episodeInfo}</Text>
-                  ) : null}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
+                  {continueItems.slice(0, 10).map((item) => (
+                    <TouchableOpacity
+                      key={`cw-${item.type}-${item.id}`}
+                      style={styles.cwCard}
+                      activeOpacity={0.7}
+                      onPress={() => goDetail(item)}
+                    >
+                      <Image
+                        source={{ uri: item.poster || "https://via.placeholder.com/200x300?text=?" }}
+                        style={[styles.cwPoster, { backgroundColor: colors.card }]}
+                      />
+                      <View style={styles.cwOverlay}>
+                        <Ionicons name="play-circle" size={30} color="rgba(255,255,255,0.9)" />
+                      </View>
+                      <Text style={[styles.cwTitle, { color: colors.text }]} numberOfLines={2}>{item.title}</Text>
+                      {item.episodeInfo ? (
+                        <Text style={[styles.cwEpisode, { color: colors.accent }]}>{item.episodeInfo}</Text>
+                      ) : null}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            <ContentRow
+              title="Top Anime"
+              data={topAnime}
+              loading={initialLoading}
+              onPressItem={goDetail}
+              onSeeAll={() => navigation.navigate("AnimeTab")}
+              badge={(item) => item.subtitle?.includes("★") ? item.subtitle : null}
+            />
+
+            <ContentRow
+              title="Trending Movies"
+              data={trendingMovies}
+              loading={initialLoading}
+              onPressItem={goDetail}
+              onSeeAll={() => navigation.navigate("MoviesTab")}
+            />
+
+            <ContentRow
+              title="Popular Manga"
+              data={popularManga}
+              loading={initialLoading}
+              onPressItem={goDetail}
+            />
+
+            <ContentRow
+              title="TV Series"
+              data={tvShows}
+              loading={initialLoading}
+              onPressItem={goDetail}
+            />
+
+            <ContentRow
+              title="Light Novels"
+              data={novels}
+              loading={initialLoading}
+              onPressItem={goDetail}
+            />
+          </>
         )}
-
-        <ContentRow
-          title="Top Anime"
-          data={topAnime}
-          onPressItem={goDetail}
-          badge={(item) => item.subtitle?.includes("★") ? item.subtitle : null}
-        />
-
-        <ContentRow
-          title="Trending Movies"
-          data={trendingMovies}
-          onPressItem={goDetail}
-        />
-
-        <ContentRow
-          title="Popular Manga"
-          data={popularManga}
-          onPressItem={goDetail}
-        />
-
-        <ContentRow
-          title="TV Series"
-          data={tvShows}
-          onPressItem={goDetail}
-        />
-
-        <ContentRow
-          title="Light Novels"
-          data={novels}
-          onPressItem={goDetail}
-        />
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -219,25 +238,18 @@ export default function HomeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  cwSection: {
-    marginTop: SPACING.lg,
-  },
+  cwSection: { marginTop: SPACING.lg },
   cwSectionTitle: {
-    color: COLORS.text,
     fontSize: 18,
     fontWeight: "700",
     paddingHorizontal: SPACING.lg,
     marginBottom: SPACING.sm,
   },
-  cwCard: {
-    width: CW_CARD_W,
-    marginRight: SPACING.md,
-  },
+  cwCard: { width: CW_CARD_W, marginRight: SPACING.md },
   cwPoster: {
     width: CW_CARD_W,
     height: CW_CARD_W * 0.56,
     borderRadius: RADIUS.md,
-    backgroundColor: COLORS.card,
   },
   cwOverlay: {
     position: "absolute",
@@ -251,13 +263,11 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.3)",
   },
   cwTitle: {
-    color: COLORS.text,
     fontSize: 12,
     fontWeight: "600",
     marginTop: 4,
   },
   cwEpisode: {
-    color: COLORS.accent,
     fontSize: 11,
     fontWeight: "500",
   },

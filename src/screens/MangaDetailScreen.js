@@ -15,11 +15,13 @@ import { Ionicons } from "@expo/vector-icons";
 import ScreenWrapper from "../components/ScreenWrapper";
 import { getMangaDetails, getMangaChapters } from "../api/mangadex";
 import { addToWatchlist, removeFromWatchlist, isInWatchlist } from "../utils/watchlist";
-import { COLORS, RADIUS, SPACING } from "../utils/theme";
+import { RADIUS, SPACING } from "../utils/theme";
+import { useTheme } from "../utils/ThemeContext";
 
 const { width, height } = Dimensions.get("window");
 
 export default function MangaDetailScreen({ route, navigation }) {
+  const { colors } = useTheme();
   const { id } = route.params;
   const [manga, setManga] = useState(null);
   const [chapters, setChapters] = useState([]);
@@ -60,7 +62,7 @@ export default function MangaDetailScreen({ route, navigation }) {
   if (!manga)
     return (
       <ScreenWrapper style={{ justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color={COLORS.accent} />
+        <ActivityIndicator size="large" color={colors.accent} />
       </ScreenWrapper>
     );
 
@@ -73,7 +75,7 @@ export default function MangaDetailScreen({ route, navigation }) {
         <View style={styles.bannerWrap}>
           <Image source={{ uri: manga.cover }} style={styles.banner} />
           <LinearGradient
-            colors={["transparent", COLORS.bg]}
+            colors={["transparent", colors.bg]}
             style={styles.gradient}
           />
           <TouchableOpacity
@@ -86,43 +88,43 @@ export default function MangaDetailScreen({ route, navigation }) {
 
         <View style={styles.content}>
           <Text style={styles.title}>{manga.title}</Text>
-          <Text style={styles.author}>by {manga.author}</Text>
+          <Text style={[styles.author, { color: colors.textSecondary }]}>by {manga.author}</Text>
 
           <View style={styles.metaRow}>
             {manga.status ? (
               <View style={styles.statusBadge}>
-                <Text style={styles.statusText}>{manga.status}</Text>
+                <Text style={[styles.statusText, { color: colors.green }]}>{manga.status}</Text>
               </View>
             ) : null}
-            {manga.year ? <Text style={styles.meta}>{manga.year}</Text> : null}
-            <Text style={styles.meta}>{chapters.length} chapters</Text>
+            {manga.year ? <Text style={[styles.meta, { color: colors.textSecondary, backgroundColor: colors.card }]}>{manga.year}</Text> : null}
+            <Text style={[styles.meta, { color: colors.textSecondary, backgroundColor: colors.card }]}>{chapters.length} chapters</Text>
           </View>
 
           <View style={styles.genreRow}>
             {manga.tags?.slice(0, 6).map((t, i) => (
               <View key={i} style={styles.genreTag}>
-                <Text style={styles.genreText}>{t}</Text>
+                <Text style={[styles.genreText, { color: colors.accentLight }]}>{t}</Text>
               </View>
             ))}
           </View>
 
           <View style={styles.actionRow}>
             <TouchableOpacity
-              style={[styles.actionBtn, inList && styles.actionBtnActive]}
+              style={[styles.actionBtn, { backgroundColor: colors.card, borderColor: colors.border }, inList && styles.actionBtnActive, inList && { borderColor: colors.accent }]}
               onPress={toggleWatchlist}
             >
               <Ionicons
                 name={inList ? "bookmark" : "bookmark-outline"}
                 size={20}
-                color={inList ? COLORS.accent : COLORS.text}
+                color={inList ? colors.accent : colors.text}
               />
-              <Text style={[styles.actionText, inList && { color: COLORS.accent }]}>
+              <Text style={[styles.actionText, { color: colors.text }, inList && { color: colors.accent }]}>
                 {inList ? "Saved" : "Watchlist"}
               </Text>
             </TouchableOpacity>
             {chapters.length > 0 ? (
               <TouchableOpacity
-                style={styles.readBtn}
+                style={[styles.readBtn, { backgroundColor: colors.accent }]}
                 onPress={() =>
                   navigation.navigate("MangaReader", {
                     chapterId: chapters[0].id,
@@ -139,13 +141,13 @@ export default function MangaDetailScreen({ route, navigation }) {
 
           {desc ? (
             <>
-              <Text style={styles.sectionTitle}>Synopsis</Text>
-              <Text style={styles.desc}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Synopsis</Text>
+              <Text style={[styles.desc, { color: colors.textSecondary }]}>
                 {showFullDesc ? desc : shortDesc}
               </Text>
               {desc.length > 200 ? (
                 <TouchableOpacity onPress={() => setShowFullDesc(!showFullDesc)}>
-                  <Text style={styles.readMore}>
+                  <Text style={[styles.readMore, { color: colors.accent }]}>
                     {showFullDesc ? "Show less" : "Read more"}
                   </Text>
                 </TouchableOpacity>
@@ -153,13 +155,13 @@ export default function MangaDetailScreen({ route, navigation }) {
             </>
           ) : null}
 
-          <Text style={styles.sectionTitle}>Chapters</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Chapters</Text>
         </View>
 
         {chapters.map((ch) => (
           <TouchableOpacity
             key={ch.id}
-            style={styles.chapterItem}
+            style={[styles.chapterItem, { borderColor: colors.border }]}
             onPress={() =>
               navigation.navigate("MangaReader", {
                 chapterId: ch.id,
@@ -169,14 +171,14 @@ export default function MangaDetailScreen({ route, navigation }) {
             }
           >
             <View style={{ flex: 1 }}>
-              <Text style={styles.chTitle}>Chapter {ch.chapter}</Text>
+              <Text style={[styles.chTitle, { color: colors.text }]}>Chapter {ch.chapter}</Text>
               {ch.title !== `Chapter ${ch.chapter}` ? (
-                <Text style={styles.chSubtitle} numberOfLines={1}>
+                <Text style={[styles.chSubtitle, { color: colors.textMuted }]} numberOfLines={1}>
                   {ch.title}
                 </Text>
               ) : null}
             </View>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </TouchableOpacity>
         ))}
 
@@ -200,7 +202,7 @@ const styles = StyleSheet.create({
   },
   content: { paddingHorizontal: SPACING.lg, marginTop: -30 },
   title: { color: "#fff", fontSize: 24, fontWeight: "800" },
-  author: { color: COLORS.textSecondary, fontSize: 14, marginTop: 2 },
+  author: { fontSize: 14, marginTop: 2 },
   metaRow: { flexDirection: "row", alignItems: "center", marginTop: SPACING.md, gap: SPACING.sm },
   statusBadge: {
     backgroundColor: "rgba(34,197,94,0.15)",
@@ -208,11 +210,9 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: RADIUS.sm,
   },
-  statusText: { color: COLORS.green, fontSize: 12, fontWeight: "600", textTransform: "capitalize" },
+  statusText: { fontSize: 12, fontWeight: "600", textTransform: "capitalize" },
   meta: {
-    color: COLORS.textSecondary,
     fontSize: 13,
-    backgroundColor: COLORS.card,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 3,
     borderRadius: RADIUS.sm,
@@ -225,42 +225,38 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: RADIUS.sm,
   },
-  genreText: { color: COLORS.accentLight, fontSize: 12, fontWeight: "600" },
+  genreText: { fontSize: 12, fontWeight: "600" },
   actionRow: { flexDirection: "row", marginTop: SPACING.lg, gap: SPACING.md },
   actionBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: COLORS.card,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
     borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
-  actionBtnActive: { borderColor: COLORS.accent, backgroundColor: "rgba(139,92,246,0.1)" },
-  actionText: { color: COLORS.text, fontWeight: "600", fontSize: 14 },
+  actionBtnActive: { backgroundColor: "rgba(139,92,246,0.1)" },
+  actionText: { fontWeight: "600", fontSize: 14 },
   readBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: COLORS.accent,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
     borderRadius: RADIUS.md,
   },
   readBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
-  sectionTitle: { color: COLORS.text, fontSize: 18, fontWeight: "700", marginTop: SPACING.xl, marginBottom: SPACING.sm },
-  desc: { color: COLORS.textSecondary, fontSize: 14, lineHeight: 22 },
-  readMore: { color: COLORS.accent, fontWeight: "600", marginTop: SPACING.xs },
+  sectionTitle: { fontSize: 18, fontWeight: "700", marginTop: SPACING.xl, marginBottom: SPACING.sm },
+  desc: { fontSize: 14, lineHeight: 22 },
+  readMore: { fontWeight: "600", marginTop: SPACING.xs },
   chapterItem: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     borderBottomWidth: 1,
-    borderColor: COLORS.border,
   },
-  chTitle: { color: COLORS.text, fontSize: 14, fontWeight: "600" },
-  chSubtitle: { color: COLORS.textMuted, fontSize: 12, marginTop: 2 },
+  chTitle: { fontSize: 14, fontWeight: "600" },
+  chSubtitle: { fontSize: 12, marginTop: 2 },
 });

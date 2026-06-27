@@ -1,9 +1,9 @@
 import React from "react";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, DefaultTheme, DarkTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS } from "../utils/theme";
+import { useTheme } from "../utils/ThemeContext";
 
 import HomeScreen from "../screens/HomeScreen";
 import AnimeScreen from "../screens/AnimeScreen";
@@ -26,6 +26,8 @@ import WatchlistScreen from "../screens/WatchlistScreen";
 import VideoPlayerScreen from "../screens/VideoPlayerScreen";
 import CollectionsScreen from "../screens/CollectionsScreen";
 import TopRatedScreen from "../screens/TopRatedScreen";
+import ChartsScreen from "../screens/ChartsScreen";
+import HindiSeriesScreen from "../screens/HindiSeriesScreen";
 import MoreScreen from "../screens/MoreScreen";
 
 const Tab = createBottomTabNavigator();
@@ -40,20 +42,27 @@ const TAB_ICONS = {
 };
 
 function TabNavigator() {
+  const { colors } = useTheme();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: COLORS.bg,
-          borderTopColor: COLORS.border,
+          backgroundColor: colors.tabBar,
+          borderTopColor: colors.border,
           borderTopWidth: 1,
           height: 60,
           paddingBottom: 8,
           paddingTop: 6,
+          elevation: 12,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
         },
-        tabBarActiveTintColor: COLORS.accent,
-        tabBarInactiveTintColor: COLORS.textMuted,
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: { fontSize: 10, fontWeight: "600" },
         tabBarIcon: ({ focused, color }) => {
           const icons = TAB_ICONS[route.name];
@@ -77,9 +86,23 @@ function TabNavigator() {
 }
 
 export default function Navigation() {
+  const { isDark, colors } = useTheme();
+
+  const navTheme = {
+    dark: isDark,
+    colors: {
+      primary: colors.accent,
+      background: colors.bg,
+      card: colors.card,
+      text: colors.text,
+      border: colors.border,
+      notification: colors.accent,
+    },
+  };
+
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <NavigationContainer theme={navTheme}>
+      <Stack.Navigator screenOptions={{ headerShown: false, animation: "slide_from_right" }}>
         <Stack.Screen name="Main" component={TabNavigator} />
         <Stack.Screen name="AnimeDetail" component={AnimeDetailScreen} />
         <Stack.Screen name="MangaBrowse" component={MangaScreen} />
@@ -98,6 +121,8 @@ export default function Navigation() {
         <Stack.Screen name="VideoPlayer" component={VideoPlayerScreen} />
         <Stack.Screen name="Collections" component={CollectionsScreen} />
         <Stack.Screen name="TopRated" component={TopRatedScreen} />
+        <Stack.Screen name="Charts" component={ChartsScreen} />
+        <Stack.Screen name="HindiSeries" component={HindiSeriesScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

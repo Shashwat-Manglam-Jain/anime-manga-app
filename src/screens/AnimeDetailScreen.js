@@ -13,13 +13,16 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import ScreenWrapper from "../components/ScreenWrapper";
 import ContentRow from "../components/ContentRow";
+import { SkeletonDetail } from "../components/SkeletonLoader";
 import { getAnimeById, getAnimeRecommendations, getAnimeCharacters, getAnimeEpisodes } from "../api/jikan";
 import { addToWatchlist, removeFromWatchlist, isInWatchlist } from "../utils/watchlist";
-import { COLORS, RADIUS, SPACING } from "../utils/theme";
+import { RADIUS, SPACING } from "../utils/theme";
+import { useTheme } from "../utils/ThemeContext";
 
 const { width, height } = Dimensions.get("window");
 
 export default function AnimeDetailScreen({ route, navigation }) {
+  const { colors } = useTheme();
   const { id } = route.params;
   const [anime, setAnime] = useState(null);
   const [recs, setRecs] = useState([]);
@@ -28,25 +31,46 @@ export default function AnimeDetailScreen({ route, navigation }) {
   const [totalEps, setTotalEps] = useState(0);
   const [inList, setInList] = useState(false);
   const [showFullSynopsis, setShowFullSynopsis] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
+    setAnime(null);
+    setRecs([]);
+    setChars([]);
+    setEpisodes([]);
+
     (async () => {
       try {
-        const [a, r, c, ep] = await Promise.all([
-          getAnimeById(id),
+        const a = await getAnimeById(id);
+        setAnime(a);
+
+        const computedEps = a.episodes || 24;
+        setTotalEps(computedEps);
+        setLoading(false);
+
+        const [r, c, ep] = await Promise.allSettled([
           getAnimeRecommendations(id),
           getAnimeCharacters(id),
           getAnimeEpisodes(id, 1),
         ]);
-        setAnime(a);
-        setRecs(r);
-        setChars(c);
-        const epData = ep.data || [];
-        setEpisodes(epData);
-        setTotalEps(a.episodes || ep.pagination?.last_visible_page * 100 || epData.length || 24);
+
+        if (r.status === "fulfilled") setRecs(r.value);
+        if (c.status === "fulfilled") setChars(c.value);
+        if (ep.status === "fulfilled") {
+          const epData = ep.value.data || [];
+          setEpisodes(epData);
+          if (epData.length > 0) {
+            const lastPage = ep.value.pagination?.last_visible_page || 1;
+            const betterTotal = a.episodes || lastPage * 100 || epData.length;
+            setTotalEps(betterTotal);
+          }
+        }
+
         setInList(await isInWatchlist(id, "anime"));
       } catch (err) {
         console.log(err.message);
+        setLoading(false);
       }
     })();
   }, [id]);
@@ -80,12 +104,25 @@ export default function AnimeDetailScreen({ route, navigation }) {
     });
   };
 
-  if (!anime)
+  if (loading) {
     return (
-      <ScreenWrapper style={{ justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color={COLORS.accent} />
+      <ScreenWrapper>
+        <SkeletonDetail />
       </ScreenWrapper>
     );
+  }
+
+  if (!anime) {
+    return (
+      <ScreenWrapper style={{ justifyContent: "center", alignItems: "center" }}>
+        <Ionicons name="alert-circle-outline" size={48} color={colors.textMuted} />
+        <Text style={{ color: colors.textMuted, marginTop: SPACING.md }}>Failed to load</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: SPACING.lg }}>
+          <Text style={{ color: colors.accent, fontWeight: "600" }}>Go Back</Text>
+        </TouchableOpacity>
+      </ScreenWrapper>
+    );
+  }
 
   const synopsis = anime.synopsis || "No synopsis available.";
   const shortSynopsis = synopsis.length > 200 ? synopsis.slice(0, 200) + "..." : synopsis;
@@ -99,7 +136,7 @@ export default function AnimeDetailScreen({ route, navigation }) {
             style={styles.banner}
           />
           <LinearGradient
-            colors={["transparent", COLORS.bg]}
+            colors={["transparent", colors.bg]}
             style={styles.gradient}
           />
           <TouchableOpacity
@@ -113,98 +150,115 @@ export default function AnimeDetailScreen({ route, navigation }) {
         <View style={styles.content}>
           <Text style={styles.title}>{anime.title}</Text>
           {anime.title_english && anime.title_english !== anime.title ? (
-            <Text style={styles.altTitle}>{anime.title_english}</Text>
+            <Text style={[styles.altTitle, { color: colors.textSecondary }]}>{anime.title_english}</Text>
           ) : null}
 
           <View style={styles.metaRow}>
             {anime.score ? (
               <View style={styles.scoreBadge}>
-                <Ionicons name="star" size={14} color={COLORS.yellow} />
-                <Text style={styles.scoreText}>{anime.score}</Text>
+                <Ionicons name="star" size={14} color={colors.yellow} />
+                <Text style={[styles.scoreText, { color: colors.yellow }]}>{anime.score}</Text>
               </View>
             ) : null}
-            {anime.type ? <Text style={styles.meta}>{anime.type}</Text> : null}
+            {anime.type ? <Text style={[styles.meta, { color: colors.textSecondary, backgroundColor: colors.card }]}>{anime.type}</Text> : null}
             {totalEps > 0 ? (
-              <Text style={styles.meta}>{totalEps} eps</Text>
+              <Text style={[styles.meta, { color: colors.textSecondary, backgroundColor: colors.card }]}>{totalEps} eps</Text>
             ) : null}
             {anime.status ? (
-              <Text style={styles.meta}>{anime.status}</Text>
+              <Text style={[styles.meta, { color: colors.textSecondary, backgroundColor: colors.card }]}>{anime.status}</Text>
+            ) : null}
+            {anime.aired?.string ? (
+              <Text style={[styles.meta, { color: colors.textSecondary, backgroundColor: colors.card }]}>{anime.aired.string}</Text>
             ) : null}
           </View>
 
           <View style={styles.genreRow}>
             {anime.genres?.map((g) => (
               <View key={g.mal_id} style={styles.genreTag}>
-                <Text style={styles.genreText}>{g.name}</Text>
+                <Text style={[styles.genreText, { color: colors.accentLight }]}>{g.name}</Text>
               </View>
             ))}
           </View>
 
           <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.watchBtn} onPress={() => handleWatch(1, "sub")}>
+            <TouchableOpacity style={[styles.watchBtn, { backgroundColor: colors.accent }]} onPress={() => handleWatch(1, "sub")}>
               <Ionicons name="play" size={18} color="#fff" />
               <Text style={styles.watchBtnText}>SUB</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.dubBtn} onPress={() => handleWatch(1, "dub")}>
+            <TouchableOpacity style={[styles.dubBtn, { backgroundColor: colors.blue }]} onPress={() => handleWatch(1, "dub")}>
               <Ionicons name="play" size={18} color="#fff" />
               <Text style={styles.watchBtnText}>DUB</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.actionBtn, inList && styles.actionBtnActive]}
+              style={[styles.actionBtn, { backgroundColor: colors.card, borderColor: colors.border }, inList && styles.actionBtnActive, inList && { borderColor: colors.accent }]}
               onPress={toggleWatchlist}
             >
               <Ionicons
                 name={inList ? "bookmark" : "bookmark-outline"}
                 size={20}
-                color={inList ? COLORS.accent : COLORS.text}
+                color={inList ? colors.accent : colors.text}
               />
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.sectionTitle}>Synopsis</Text>
-          <Text style={styles.synopsis}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Synopsis</Text>
+          <Text style={[styles.synopsis, { color: colors.textSecondary }]}>
             {showFullSynopsis ? synopsis : shortSynopsis}
           </Text>
           {synopsis.length > 200 ? (
             <TouchableOpacity onPress={() => setShowFullSynopsis(!showFullSynopsis)}>
-              <Text style={styles.readMore}>
+              <Text style={[styles.readMore, { color: colors.accent }]}>
                 {showFullSynopsis ? "Show less" : "Read more"}
               </Text>
             </TouchableOpacity>
           ) : null}
 
-          {episodes.length > 0 && (
+          {totalEps > 0 && (
             <>
-              <Text style={styles.sectionTitle}>Episodes</Text>
-              {episodes.slice(0, 20).map((ep) => (
-                <TouchableOpacity
-                  key={ep.mal_id}
-                  style={styles.episodeItem}
-                  onPress={() => handleWatch(ep.mal_id, "sub")}
-                >
-                  <View style={styles.epNumWrap}>
-                    <Text style={styles.epNum}>{ep.mal_id}</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.epTitle} numberOfLines={1}>
-                      {ep.title || `Episode ${ep.mal_id}`}
-                    </Text>
-                    {ep.aired ? (
-                      <Text style={styles.epDate}>
-                        {new Date(ep.aired).toLocaleDateString()}
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Episodes ({totalEps})</Text>
+              {episodes.length > 0 ? (
+                episodes.slice(0, 20).map((ep) => (
+                  <TouchableOpacity
+                    key={ep.mal_id}
+                    style={[styles.episodeItem, { borderColor: colors.border }]}
+                    onPress={() => handleWatch(ep.mal_id, "sub")}
+                  >
+                    <View style={[styles.epNumWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                      <Text style={[styles.epNum, { color: colors.text }]}>{ep.mal_id}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.epTitle, { color: colors.text }]} numberOfLines={1}>
+                        {ep.title || `Episode ${ep.mal_id}`}
                       </Text>
-                    ) : null}
-                  </View>
-                  <Ionicons name="play-circle" size={24} color={COLORS.accent} />
-                </TouchableOpacity>
-              ))}
-              {totalEps > 20 && (
+                      {ep.aired ? (
+                        <Text style={[styles.epDate, { color: colors.textMuted }]}>
+                          {new Date(ep.aired).toLocaleDateString()}
+                        </Text>
+                      ) : null}
+                    </View>
+                    <Ionicons name="play-circle" size={24} color={colors.accent} />
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <View style={styles.epGrid}>
+                  {Array.from({ length: Math.min(totalEps, 50) }, (_, i) => i + 1).map((ep) => (
+                    <TouchableOpacity
+                      key={ep}
+                      style={[styles.epGridBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+                      onPress={() => handleWatch(ep, "sub")}
+                    >
+                      <Text style={[styles.epGridText, { color: colors.textSecondary }]}>{ep}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+              {(episodes.length > 20 || totalEps > 50) && (
                 <TouchableOpacity
                   style={styles.viewAllBtn}
                   onPress={() => handleWatch(1, "sub")}
                 >
-                  <Text style={styles.viewAllText}>View All {totalEps} Episodes</Text>
-                  <Ionicons name="arrow-forward" size={16} color={COLORS.accent} />
+                  <Text style={[styles.viewAllText, { color: colors.accent }]}>Watch from Episode 1</Text>
+                  <Ionicons name="arrow-forward" size={16} color={colors.accent} />
                 </TouchableOpacity>
               )}
             </>
@@ -212,7 +266,7 @@ export default function AnimeDetailScreen({ route, navigation }) {
 
           {anime.trailer?.url ? (
             <View style={styles.infoSection}>
-              <Text style={styles.sectionTitle}>Trailer</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Trailer</Text>
               <TouchableOpacity style={styles.trailerCard}>
                 <Image
                   source={{ uri: anime.trailer.images?.maximum_image_url }}
@@ -227,21 +281,30 @@ export default function AnimeDetailScreen({ route, navigation }) {
 
           {chars.length > 0 ? (
             <View style={styles.infoSection}>
-              <Text style={styles.sectionTitle}>Characters</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Characters</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {chars.map((c) => (
                   <View key={c.character.mal_id} style={styles.charCard}>
                     <Image
                       source={{ uri: c.character.images?.jpg?.image_url }}
-                      style={styles.charImg}
+                      style={[styles.charImg, { backgroundColor: colors.card }]}
                     />
-                    <Text style={styles.charName} numberOfLines={1}>
+                    <Text style={[styles.charName, { color: colors.text }]} numberOfLines={1}>
                       {c.character.name}
                     </Text>
-                    <Text style={styles.charRole}>{c.role}</Text>
+                    <Text style={[styles.charRole, { color: colors.textMuted }]}>{c.role}</Text>
                   </View>
                 ))}
               </ScrollView>
+            </View>
+          ) : null}
+
+          {anime.studios?.length > 0 ? (
+            <View style={styles.infoSection}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Studio</Text>
+              <Text style={[styles.studioText, { color: colors.textSecondary }]}>
+                {anime.studios.map((s) => s.name).join(", ")}
+              </Text>
             </View>
           ) : null}
         </View>
@@ -281,7 +344,7 @@ const styles = StyleSheet.create({
   },
   content: { paddingHorizontal: SPACING.lg, marginTop: -40 },
   title: { color: "#fff", fontSize: 24, fontWeight: "800" },
-  altTitle: { color: COLORS.textSecondary, fontSize: 14, marginTop: 2 },
+  altTitle: { fontSize: 14, marginTop: 2 },
   metaRow: { flexDirection: "row", alignItems: "center", marginTop: SPACING.md, gap: SPACING.sm, flexWrap: "wrap" },
   scoreBadge: {
     flexDirection: "row",
@@ -292,11 +355,9 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.sm,
     gap: 4,
   },
-  scoreText: { color: COLORS.yellow, fontSize: 13, fontWeight: "700" },
+  scoreText: { fontSize: 13, fontWeight: "700" },
   meta: {
-    color: COLORS.textSecondary,
     fontSize: 13,
-    backgroundColor: COLORS.card,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 3,
     borderRadius: RADIUS.sm,
@@ -309,25 +370,22 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: RADIUS.sm,
   },
-  genreText: { color: COLORS.accentLight, fontSize: 12, fontWeight: "600" },
+  genreText: { fontSize: 12, fontWeight: "600" },
   actionRow: { flexDirection: "row", marginTop: SPACING.lg, gap: SPACING.sm },
   actionBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: COLORS.card,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
     borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
-  actionBtnActive: { borderColor: COLORS.accent, backgroundColor: "rgba(139,92,246,0.1)" },
+  actionBtnActive: { backgroundColor: "rgba(139,92,246,0.1)" },
   watchBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: COLORS.accent,
     paddingHorizontal: SPACING.xl,
     paddingVertical: SPACING.md,
     borderRadius: RADIUS.md,
@@ -336,36 +394,42 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: COLORS.blue,
     paddingHorizontal: SPACING.xl,
     paddingVertical: SPACING.md,
     borderRadius: RADIUS.md,
   },
   watchBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
-  sectionTitle: { color: COLORS.text, fontSize: 18, fontWeight: "700", marginTop: SPACING.xl, marginBottom: SPACING.sm },
-  synopsis: { color: COLORS.textSecondary, fontSize: 14, lineHeight: 22 },
-  readMore: { color: COLORS.accent, fontWeight: "600", marginTop: SPACING.xs },
+  sectionTitle: { fontSize: 18, fontWeight: "700", marginTop: SPACING.xl, marginBottom: SPACING.sm },
+  synopsis: { fontSize: 14, lineHeight: 22 },
+  readMore: { fontWeight: "600", marginTop: SPACING.xs },
   episodeItem: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: SPACING.md,
     borderBottomWidth: 1,
-    borderColor: COLORS.border,
     gap: SPACING.md,
   },
   epNumWrap: {
     width: 36,
     height: 36,
     borderRadius: RADIUS.sm,
-    backgroundColor: COLORS.card,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
-  epNum: { color: COLORS.text, fontSize: 13, fontWeight: "700" },
-  epTitle: { color: COLORS.text, fontSize: 14, fontWeight: "500" },
-  epDate: { color: COLORS.textMuted, fontSize: 11, marginTop: 2 },
+  epNum: { fontSize: 13, fontWeight: "700" },
+  epTitle: { fontSize: 14, fontWeight: "500" },
+  epDate: { fontSize: 11, marginTop: 2 },
+  epGrid: { flexDirection: "row", flexWrap: "wrap", gap: SPACING.xs },
+  epGridBtn: {
+    width: 44,
+    height: 38,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+  },
+  epGridText: { fontSize: 13, fontWeight: "600" },
   viewAllBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -374,13 +438,14 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
     marginTop: SPACING.sm,
   },
-  viewAllText: { color: COLORS.accent, fontWeight: "600", fontSize: 14 },
+  viewAllText: { fontWeight: "600", fontSize: 14 },
   infoSection: { marginTop: SPACING.md },
   trailerCard: { borderRadius: RADIUS.md, overflow: "hidden", height: 180 },
   trailerImg: { width: "100%", height: "100%", resizeMode: "cover" },
   trailerOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.3)" },
   charCard: { width: 80, marginRight: SPACING.md, alignItems: "center" },
-  charImg: { width: 70, height: 70, borderRadius: 35, backgroundColor: COLORS.card },
-  charName: { color: COLORS.text, fontSize: 11, fontWeight: "600", marginTop: 4, textAlign: "center" },
-  charRole: { color: COLORS.textMuted, fontSize: 10 },
+  charImg: { width: 70, height: 70, borderRadius: 35 },
+  charName: { fontSize: 11, fontWeight: "600", marginTop: 4, textAlign: "center" },
+  charRole: { fontSize: 10 },
+  studioText: { fontSize: 14 },
 });

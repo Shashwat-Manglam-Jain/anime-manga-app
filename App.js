@@ -3,6 +3,7 @@ import { View, StyleSheet, LogBox } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import ErrorBoundary from "./src/components/ErrorBoundary";
 import Navigation from "./src/navigation";
+import { ThemeProvider } from "./src/utils/ThemeContext";
 
 let SplashScreen = null;
 try {
@@ -29,15 +30,17 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <ErrorBoundary>
-        <View style={styles.root} onLayout={onLayout}>
-          <Navigation />
-        </View>
-      </ErrorBoundary>
+      <ThemeProvider>
+        <ErrorBoundary>
+          <View style={styles.root} onLayout={onLayout}>
+            <Navigation />
+          </View>
+        </ErrorBoundary>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#0a0a0f" },
+  root: { flex: 1 },
 });

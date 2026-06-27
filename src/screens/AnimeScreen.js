@@ -4,7 +4,8 @@ import ScreenWrapper from "../components/ScreenWrapper";
 import FilterTabs from "../components/FilterTabs";
 import GridView from "../components/GridView";
 import { getTopAnime, getSeasonNow } from "../api/jikan";
-import { COLORS, SPACING } from "../utils/theme";
+import { SPACING } from "../utils/theme";
+import { useTheme } from "../utils/ThemeContext";
 
 const FILTERS = [
   { label: "Airing", value: "airing" },
@@ -15,6 +16,7 @@ const FILTERS = [
 ];
 
 export default function AnimeScreen({ navigation }) {
+  const { colors } = useTheme();
   const [filter, setFilter] = useState("airing");
   const [data, setData] = useState([]);
   const [page, setPage] = useState(1);
@@ -62,7 +64,7 @@ export default function AnimeScreen({ navigation }) {
 
   return (
     <ScreenWrapper>
-      <Text style={styles.heading}>Anime</Text>
+      <Text style={[styles.heading, { color: colors.text }]}>Anime</Text>
       <GridView
         data={data}
         loading={loading}
@@ -81,7 +83,6 @@ export default function AnimeScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   heading: {
-    color: COLORS.text,
     fontSize: 26,
     fontWeight: "800",
     paddingHorizontal: SPACING.lg,

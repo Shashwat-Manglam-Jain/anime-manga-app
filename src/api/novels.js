@@ -80,12 +80,12 @@ export async function getNovelInfo(id) {
 }
 
 const NOVELBIN_BASE = "https://novelbin.me";
-const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
+const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
 async function fetchHTML(url, xhr = false) {
   const headers = { "User-Agent": UA };
   if (xhr) headers["X-Requested-With"] = "XMLHttpRequest";
-  const { data } = await axios.get(url, { headers });
+  const { data } = await axios.get(url, { headers, timeout: 15000 });
   return data;
 }
 
@@ -99,17 +99,38 @@ export async function searchNovelBin(query) {
     true
   );
   const results = [];
-  const matches = html.matchAll(
-    /href="(?:https:\/\/novelbin\.me)?\/novel-book\/([^"]+)"[^>]*(?:class="list-group-item"[^>]*)?title="([^"]+)"/g
-  );
-  for (const m of matches) {
-    if (m[2].toLowerCase().includes("see more")) continue;
+
+  const itemRegex = /<a[^>]*href="[^"]*\/novel-book\/([^"\/]+)"[^>]*>[\s\S]*?<\/a>/gi;
+  let match;
+  while ((match = itemRegex.exec(html)) !== null) {
+    const block = match[0];
+    const slug = match[1];
+    const titleMatch = block.match(/title="([^"]+)"/);
+    const title = titleMatch ? titleMatch[1].trim() : slug.replace(/-/g, " ");
+    if (title.toLowerCase().includes("see more")) continue;
+    if (results.some((r) => r.id === slug)) continue;
     results.push({
-      id: m[1],
-      title: m[2].trim(),
-      image: `https://images.novelbin.me/novel/${m[1]}.jpg`,
+      id: slug,
+      title,
+      image: `https://images.novelbin.me/novel/${slug}.jpg`,
     });
   }
+
+  if (results.length === 0) {
+    const fallbackRegex = /href="(?:https?:\/\/[^"]*)?\/novel-book\/([^"\/]+)"[^>]*(?:title="([^"]*)"|)/g;
+    while ((match = fallbackRegex.exec(html)) !== null) {
+      const slug = match[1];
+      const title = (match[2] || slug.replace(/-/g, " ")).trim();
+      if (title.toLowerCase().includes("see more")) continue;
+      if (results.some((r) => r.id === slug)) continue;
+      results.push({
+        id: slug,
+        title,
+        image: `https://images.novelbin.me/novel/${slug}.jpg`,
+      });
+    }
+  }
+
   return results;
 }
 
@@ -130,7 +151,9 @@ export async function getNovelBinInfo(slug) {
 
 async function getNovelId(slug) {
   const html = await fetchHTML(`${NOVELBIN_BASE}/novel-book/${slug}`);
-  const m = html.match(/data-novel-id="([^"]+)"/) || html.match(/novelId\s*[:=]\s*["']?(\d+)["']?/);
+  const m = html.match(/data-novel-id="([^"]+)"/)
+    || html.match(/novelId\s*[:=]\s*["']?(\d+)["']?/)
+    || html.match(/novel[_-]id\s*[:=]\s*["']?(\d+)["']?/);
   return m ? m[1] : slug;
 }
 
@@ -141,14 +164,31 @@ export async function getNovelBinChapters(slug) {
     true
   );
   const chapters = [];
-  const matches = html.matchAll(
-    /href="(?:https?:\/\/novelbin\.\w+)?\/(?:novel-book|b)\/([^"]+\/chapter[^"]*)"[^>]*(?:title="([^"]*)"|>([^<]*))/g
-  );
-  for (const m of matches) {
-    const title = (m[2] || m[3] || "").trim() || "Chapter";
+
+  const chapterRegex = /href="(?:https?:\/\/[^"]*)?\/(?:novel-book|b)\/([^"]*chapter[^"]*)"/gi;
+  let match;
+  while ((match = chapterRegex.exec(html)) !== null) {
+    const fullPath = match[1];
+
+    const titleAttrMatch = html.substring(match.index).match(/title="([^"]*)"/);
+    const textMatch = html.substring(match.index).match(/>([^<]*chapter[^<]*)</i);
+
+    let title = "";
+    if (titleAttrMatch && titleAttrMatch[1].trim()) {
+      title = titleAttrMatch[1].trim();
+    } else if (textMatch && textMatch[1].trim()) {
+      title = textMatch[1].trim();
+    } else {
+      const parts = fullPath.split("/").pop() || "";
+      title = parts.replace(/-/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+    }
+
     if (title.toLowerCase().includes("see more")) continue;
-    chapters.push({ id: m[1], title, url: m[1] });
+    if (chapters.some((c) => c.id === fullPath)) continue;
+
+    chapters.push({ id: fullPath, title, url: fullPath });
   }
+
   return chapters;
 }
 
@@ -162,6 +202,8 @@ export async function readNovelBinChapter(chapterId) {
   text = text.replace(/<script[\s\S]*?<\/script>/gi, "");
   text = text.replace(/visit\s+novelbin[.\w]*\s+for\s+(?:the\s+)?(?:latest\s+)?updates?[.!]?/gi, "");
   text = text.replace(/read\s+(?:the\s+)?latest\s+chapters\s+at\s+[\w.]+[.!]?/gi, "");
+  text = text.replace(/this\s+(?:chapter|content)\s+is\s+(?:taken|made)\s+from\s+[\w.]+[.!]?/gi, "");
+  text = text.replace(/source\s*:\s*[\w.]+/gi, "");
   text = text.replace(/<br\s*\/?>/gi, "\n");
   text = text.replace(/<\/p>/gi, "\n\n");
   text = text.replace(/<[^>]+>/g, "");

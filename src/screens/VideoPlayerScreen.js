@@ -17,7 +17,8 @@ import {
   getPreferredServer,
   setPreferredServer,
 } from "../utils/watchlist";
-import { COLORS, RADIUS, SPACING } from "../utils/theme";
+import { RADIUS, SPACING } from "../utils/theme";
+import { useTheme } from "../utils/ThemeContext";
 
 const { width } = Dimensions.get("window");
 
@@ -40,6 +41,7 @@ function buildStreamUrl(provider, contentType, isAnime, contentId, season, episo
 }
 
 export default function VideoPlayerScreen({ route, navigation }) {
+  const { colors } = useTheme();
   const {
     title = "",
     poster,
@@ -119,13 +121,13 @@ export default function VideoPlayerScreen({ route, navigation }) {
 
   return (
     <ScreenWrapper>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderColor: colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <View style={{ flex: 1, marginHorizontal: SPACING.md }}>
-          <Text style={styles.headerTitle} numberOfLines={1}>{title}</Text>
-          <Text style={styles.headerSub}>
+          <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>{title}</Text>
+          <Text style={[styles.headerSub, { color: colors.textMuted }]}>
             {seasonsCount > 1 ? `S${currentSeason} E${currentEpisode}` : epsCount > 1 ? `Episode ${currentEpisode}` : title}
           </Text>
         </View>
@@ -134,8 +136,8 @@ export default function VideoPlayerScreen({ route, navigation }) {
       <View style={styles.playerWrap}>
         {loading && (
           <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color={COLORS.accent} />
-            <Text style={styles.loadingText}>Loading player...</Text>
+            <ActivityIndicator size="large" color={colors.accent} />
+            <Text style={[styles.loadingText, { color: colors.textMuted }]}>Loading player...</Text>
           </View>
         )}
         {streamUrl ? (
@@ -154,33 +156,33 @@ export default function VideoPlayerScreen({ route, navigation }) {
       <ScrollView style={styles.controls} showsVerticalScrollIndicator={false}>
         {isAnime && (
           <>
-            <Text style={styles.sectionTitle}>Audio</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Audio</Text>
             <View style={styles.langRow}>
               <TouchableOpacity
-                style={[styles.langBtn, lang === "sub" && styles.langBtnActive]}
+                style={[styles.langBtn, { backgroundColor: colors.card, borderColor: colors.border }, lang === "sub" && { backgroundColor: colors.accent, borderColor: colors.accent }]}
                 onPress={() => { setLang("sub"); setLoading(true); }}
               >
-                <Text style={[styles.langText, lang === "sub" && styles.langTextActive]}>SUB</Text>
+                <Text style={[styles.langText, { color: colors.textSecondary }, lang === "sub" && styles.langTextActive]}>SUB</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.langBtn, lang === "dub" && styles.langBtnActive]}
+                style={[styles.langBtn, { backgroundColor: colors.card, borderColor: colors.border }, lang === "dub" && { backgroundColor: colors.accent, borderColor: colors.accent }]}
                 onPress={() => { setLang("dub"); setLoading(true); }}
               >
-                <Text style={[styles.langText, lang === "dub" && styles.langTextActive]}>DUB</Text>
+                <Text style={[styles.langText, { color: colors.textSecondary }, lang === "dub" && styles.langTextActive]}>DUB</Text>
               </TouchableOpacity>
             </View>
           </>
         )}
 
-        <Text style={styles.sectionTitle}>Server</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Server</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.serverRow}>
           {providers.map((p, i) => (
             <TouchableOpacity
               key={p.id}
-              style={[styles.serverBtn, providerIdx === i && styles.serverBtnActive]}
+              style={[styles.serverBtn, { backgroundColor: colors.card, borderColor: colors.border }, providerIdx === i && { backgroundColor: colors.accent, borderColor: colors.accent }]}
               onPress={() => handleProviderChange(i)}
             >
-              <Text style={[styles.serverText, providerIdx === i && styles.serverTextActive]}>
+              <Text style={[styles.serverText, { color: colors.textSecondary }, providerIdx === i && styles.serverTextActive]}>
                 {p.name}
               </Text>
             </TouchableOpacity>
@@ -189,19 +191,19 @@ export default function VideoPlayerScreen({ route, navigation }) {
 
         {seasonsCount > 1 && (
           <>
-            <Text style={styles.sectionTitle}>Season</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Season</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.serverRow}>
               {Array.from({ length: seasonsCount }, (_, i) => i + 1).map((s) => (
                 <TouchableOpacity
                   key={s}
-                  style={[styles.seasonBtn, currentSeason === s && styles.seasonBtnActive]}
+                  style={[styles.seasonBtn, { backgroundColor: colors.card, borderColor: colors.border }, currentSeason === s && { backgroundColor: colors.accent, borderColor: colors.accent }]}
                   onPress={() => handleSeasonChange(s)}
                 >
-                  <Text style={[styles.seasonText, currentSeason === s && styles.seasonTextActive]}>
+                  <Text style={[styles.seasonText, { color: colors.textSecondary }, currentSeason === s && styles.seasonTextActive]}>
                     Season {s}
                   </Text>
                   {seasonEpisodeCounts && seasonEpisodeCounts[s] ? (
-                    <Text style={[styles.seasonEpCount, currentSeason === s && { color: "rgba(255,255,255,0.7)" }]}>
+                    <Text style={[styles.seasonEpCount, { color: colors.textMuted }, currentSeason === s && { color: "rgba(255,255,255,0.7)" }]}>
                       {seasonEpisodeCounts[s]} eps
                     </Text>
                   ) : null}
@@ -213,17 +215,17 @@ export default function VideoPlayerScreen({ route, navigation }) {
 
         {epsCount > 1 && (
           <>
-            <Text style={styles.sectionTitle}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Episodes{seasonsCount > 1 ? ` — Season ${currentSeason}` : ""} ({epsCount})
             </Text>
             <View style={styles.epGrid}>
               {Array.from({ length: epsCount }, (_, i) => i + 1).map((ep) => (
                 <TouchableOpacity
                   key={ep}
-                  style={[styles.epBtn, currentEpisode === ep && styles.epBtnActive]}
+                  style={[styles.epBtn, { backgroundColor: colors.card, borderColor: colors.border }, currentEpisode === ep && { backgroundColor: colors.accent, borderColor: colors.accent }]}
                   onPress={() => { setCurrentEpisode(ep); setLoading(true); }}
                 >
-                  <Text style={[styles.epText, currentEpisode === ep && styles.epTextActive]}>
+                  <Text style={[styles.epText, { color: colors.textSecondary }, currentEpisode === ep && styles.epTextActive]}>
                     {ep}
                   </Text>
                 </TouchableOpacity>
@@ -233,21 +235,21 @@ export default function VideoPlayerScreen({ route, navigation }) {
             <View style={styles.navRow}>
               {currentEpisode > 1 && (
                 <TouchableOpacity
-                  style={styles.navBtn}
+                  style={[styles.navBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
                   onPress={() => { setCurrentEpisode(currentEpisode - 1); setLoading(true); }}
                 >
-                  <Ionicons name="play-skip-back" size={16} color={COLORS.text} />
-                  <Text style={styles.navText}>Prev</Text>
+                  <Ionicons name="play-skip-back" size={16} color={colors.text} />
+                  <Text style={[styles.navText, { color: colors.text }]}>Prev</Text>
                 </TouchableOpacity>
               )}
               <View style={{ flex: 1 }} />
               {currentEpisode < epsCount && (
                 <TouchableOpacity
-                  style={styles.navBtn}
+                  style={[styles.navBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
                   onPress={() => { setCurrentEpisode(currentEpisode + 1); setLoading(true); }}
                 >
-                  <Text style={styles.navText}>Next</Text>
-                  <Ionicons name="play-skip-forward" size={16} color={COLORS.text} />
+                  <Text style={[styles.navText, { color: colors.text }]}>Next</Text>
+                  <Ionicons name="play-skip-forward" size={16} color={colors.text} />
                 </TouchableOpacity>
               )}
             </View>
@@ -267,10 +269,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
     borderBottomWidth: 1,
-    borderColor: COLORS.border,
   },
-  headerTitle: { color: COLORS.text, fontSize: 15, fontWeight: "700" },
-  headerSub: { color: COLORS.textMuted, fontSize: 12 },
+  headerTitle: { fontSize: 15, fontWeight: "700" },
+  headerSub: { fontSize: 12 },
   playerWrap: {
     width,
     height: width * 0.5625,
@@ -284,10 +285,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
     zIndex: 10,
   },
-  loadingText: { color: COLORS.textMuted, marginTop: SPACING.sm, fontSize: 13 },
+  loadingText: { marginTop: SPACING.sm, fontSize: 13 },
   controls: { flex: 1, paddingHorizontal: SPACING.lg },
   sectionTitle: {
-    color: COLORS.text,
     fontSize: 15,
     fontWeight: "700",
     marginTop: SPACING.lg,
@@ -298,38 +298,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xl,
     paddingVertical: SPACING.sm,
     borderRadius: RADIUS.md,
-    backgroundColor: COLORS.card,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
-  langBtnActive: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
-  langText: { color: COLORS.textSecondary, fontSize: 14, fontWeight: "700" },
+  langText: { fontSize: 14, fontWeight: "700" },
   langTextActive: { color: "#fff" },
   serverRow: { gap: SPACING.sm },
   serverBtn: {
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
     borderRadius: RADIUS.md,
-    backgroundColor: COLORS.card,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
-  serverBtnActive: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
-  serverText: { color: COLORS.textSecondary, fontSize: 13, fontWeight: "600" },
+  serverText: { fontSize: 13, fontWeight: "600" },
   serverTextActive: { color: "#fff" },
   seasonBtn: {
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
     borderRadius: RADIUS.md,
-    backgroundColor: COLORS.card,
     borderWidth: 1,
-    borderColor: COLORS.border,
     alignItems: "center",
   },
-  seasonBtnActive: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
-  seasonText: { color: COLORS.textSecondary, fontSize: 13, fontWeight: "600" },
+  seasonText: { fontSize: 13, fontWeight: "600" },
   seasonTextActive: { color: "#fff" },
-  seasonEpCount: { color: COLORS.textMuted, fontSize: 10, marginTop: 2 },
+  seasonEpCount: { fontSize: 10, marginTop: 2 },
   epGrid: { flexDirection: "row", flexWrap: "wrap", gap: SPACING.xs },
   epBtn: {
     width: 44,
@@ -337,24 +328,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: RADIUS.sm,
-    backgroundColor: COLORS.card,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
-  epBtnActive: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
-  epText: { color: COLORS.textSecondary, fontSize: 13, fontWeight: "600" },
+  epText: { fontSize: 13, fontWeight: "600" },
   epTextActive: { color: "#fff" },
   navRow: { flexDirection: "row", marginTop: SPACING.lg, gap: SPACING.md },
   navBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: COLORS.card,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
     borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
-  navText: { color: COLORS.text, fontSize: 13, fontWeight: "600" },
+  navText: { fontSize: 13, fontWeight: "600" },
 });

@@ -136,3 +136,35 @@ export const TOP_TV_SHOWS = [
   { title: "Attack on Titan", year: 2013, tmdbId: 1429, genre: "Animation", rating: "9.1", seasons: 4, poster: `${IMG}/hTP1DtLGFamjfu8WqjnuQdP1n4i.jpg` },
   { title: "Death Note", year: 2006, tmdbId: 13916, genre: "Animation", rating: "9.0", seasons: 1, poster: `${IMG}/g8fclEHOeesMnBFwVkx5x0FZbfn.jpg` },
 ];
+
+export const HINDI_WEB_SERIES = [
+  { title: "Panchayat", year: 2020, tmdbId: 101578, genre: "Comedy, Drama", rating: "9.0", seasons: 3, poster: `${IMG}/kVelUaGOqNos2RA5cJmWMpQFcz5.jpg` },
+  { title: "Mirzapur", year: 2018, tmdbId: 79744, genre: "Crime, Thriller", rating: "8.5", seasons: 3, poster: `${IMG}/bHa7M5XfCYyKKhVc5lqorv0dqho.jpg` },
+  { title: "The Family Man", year: 2019, tmdbId: 93484, genre: "Action, Thriller", rating: "8.7", seasons: 2, poster: `${IMG}/tVikExKwPhOahYjpOzuSi5nYskz.jpg` },
+  { title: "Sacred Games", year: 2018, tmdbId: 79352, genre: "Crime, Thriller", rating: "8.6", seasons: 2, poster: `${IMG}/pSxBKQLYbIMG0yIlAfDZwtBFSBN.jpg` },
+  { title: "Kota Factory", year: 2019, tmdbId: 92785, genre: "Drama", rating: "9.1", seasons: 2, poster: `${IMG}/7hEb15JWjlDhJoRD7clxZPCL3My.jpg` },
+  { title: "Aspirants", year: 2021, tmdbId: 125988, genre: "Drama", rating: "9.2", seasons: 2, poster: `${IMG}/4G5q7OiDRfBfjGu8TGrVPzSgVvA.jpg` },
+  { title: "Scam 1992", year: 2020, tmdbId: 110316, genre: "Crime, Drama", rating: "9.3", seasons: 1, poster: `${IMG}/vbg6yYDXhiCaGunFHeSP2dRfzAI.jpg` },
+  { title: "Paatal Lok", year: 2020, tmdbId: 99966, genre: "Crime, Thriller", rating: "8.3", seasons: 2, poster: `${IMG}/9dOjTiIwNaGT4XhLseDy4hb6VHu.jpg` },
+  { title: "Delhi Crime", year: 2019, tmdbId: 88040, genre: "Crime, Drama", rating: "8.5", seasons: 2, poster: `${IMG}/dXFuzQc5GkCimi1LpJdZFb5YGWM.jpg` },
+  { title: "Made in Heaven", year: 2019, tmdbId: 87481, genre: "Drama", rating: "8.3", seasons: 2, poster: `${IMG}/b7C6s7a4RHYBxYBLTAp3k0i9Xkz.jpg` },
+  { title: "Breathe: Into the Shadows", year: 2020, tmdbId: 105236, genre: "Thriller", rating: "7.5", seasons: 2, poster: `${IMG}/rJvTBKisMByOwjr0WqfnvXlNr17.jpg` },
+  { title: "Asur", year: 2020, tmdbId: 100770, genre: "Crime, Thriller", rating: "8.4", seasons: 2, poster: `${IMG}/ddp18oCedJZYh1VCGxzcnhLhJi9.jpg` },
+  { title: "Rocket Boys", year: 2022, tmdbId: 154834, genre: "Drama, History", rating: "8.7", seasons: 2, poster: `${IMG}/f5OjxhJhDBOYpWTDzKgjVlSpQy8.jpg` },
+  { title: "Gullak", year: 2019, tmdbId: 97186, genre: "Comedy, Drama", rating: "9.0", seasons: 4, poster: `${IMG}/6P5OxvVFobUiCjAZkVgtbZ8NVWK.jpg` },
+  { title: "Hostel Daze", year: 2019, tmdbId: 97534, genre: "Comedy", rating: "8.2", seasons: 4, poster: `${IMG}/bWdNgcFhJvMbYUJZMXlqFbDPNfX.jpg` },
+  { title: "Criminal Justice", year: 2019, tmdbId: 90690, genre: "Crime, Drama", rating: "8.0", seasons: 3, poster: `${IMG}/oy03CmFhcXzBEqzBqzNqfnx73jf.jpg` },
+  { title: "Tandav", year: 2021, tmdbId: 114963, genre: "Drama, Thriller", rating: "6.5", seasons: 1, poster: `${IMG}/fLJ8qn3cRKdq4l3lJNa0R0nVaGj.jpg` },
+  { title: "Maharani", year: 2021, tmdbId: 125343, genre: "Drama, Political", rating: "8.0", seasons: 3, poster: `${IMG}/2bDSPFwkkt4zIjV1VNJNRvGelkD.jpg` },
+];
+
+export const CHARTS = [
+  { key: "hindi", title: "Hindi Web Series", icon: "flag-outline", color: "#f97316", description: "Top rated Indian shows" },
+  { key: "topMovies", title: "Top Rated Movies", icon: "film-outline", color: "#3b82f6", description: "All-time best movies" },
+  { key: "topTV", title: "Top Rated TV Shows", icon: "tv-outline", color: "#22c55e", description: "Highest rated series" },
+  { key: "collections", title: "Movie Collections", icon: "albums-outline", color: "#d946ef", description: "Franchise & series" },
+  { key: "anime", title: "Top Anime", icon: "flash-outline", color: "#8b5cf6", description: "Best anime of all time" },
+  { key: "manga", title: "Manga Library", icon: "book-outline", color: "#ef4444", description: "Popular manga titles" },
+  { key: "comics", title: "Comics", icon: "layers-outline", color: "#06b6d4", description: "Browse comic series" },
+  { key: "novels", title: "Light Novels", icon: "library-outline", color: "#eab308", description: "Light novel collection" },
+];

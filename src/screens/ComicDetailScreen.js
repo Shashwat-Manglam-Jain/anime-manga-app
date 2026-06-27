@@ -15,11 +15,13 @@ import { Ionicons } from "@expo/vector-icons";
 import ScreenWrapper from "../components/ScreenWrapper";
 import { getComicInfo, getComicChapters } from "../api/comick";
 import { addToWatchlist, removeFromWatchlist, isInWatchlist } from "../utils/watchlist";
-import { COLORS, RADIUS, SPACING } from "../utils/theme";
+import { RADIUS, SPACING } from "../utils/theme";
+import { useTheme } from "../utils/ThemeContext";
 
 const { width, height } = Dimensions.get("window");
 
 export default function ComicDetailScreen({ route, navigation }) {
+  const { colors } = useTheme();
   const { id, title: navTitle } = route.params;
   const [comic, setComic] = useState(null);
   const [chapters, setChapters] = useState([]);
@@ -85,7 +87,7 @@ export default function ComicDetailScreen({ route, navigation }) {
   if (!comic)
     return (
       <ScreenWrapper style={{ justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color={COLORS.accent} />
+        <ActivityIndicator size="large" color={colors.accent} />
       </ScreenWrapper>
     );
 
@@ -100,7 +102,7 @@ export default function ComicDetailScreen({ route, navigation }) {
             source={{ uri: comic.cover || "https://via.placeholder.com/400x600?text=?" }}
             style={styles.banner}
           />
-          <LinearGradient colors={["transparent", COLORS.bg]} style={styles.gradient} />
+          <LinearGradient colors={["transparent", colors.bg]} style={styles.gradient} />
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
@@ -110,19 +112,19 @@ export default function ComicDetailScreen({ route, navigation }) {
           <Text style={styles.title}>{comic.title}</Text>
 
           <View style={styles.metaRow}>
-            {comic.status ? <Text style={styles.meta}>{comic.status}</Text> : null}
-            {comic.year ? <Text style={styles.meta}>{comic.year}</Text> : null}
-            {comic.lastChapter ? <Text style={styles.meta}>{comic.lastChapter} chapters</Text> : null}
+            {comic.status ? <Text style={[styles.meta, { color: colors.textSecondary, backgroundColor: colors.card }]}>{comic.status}</Text> : null}
+            {comic.year ? <Text style={[styles.meta, { color: colors.textSecondary, backgroundColor: colors.card }]}>{comic.year}</Text> : null}
+            {comic.lastChapter ? <Text style={[styles.meta, { color: colors.textSecondary, backgroundColor: colors.card }]}>{comic.lastChapter} chapters</Text> : null}
           </View>
 
           {comic.authors?.length > 0 ? (
-            <Text style={styles.authors}>By {comic.authors.join(", ")}</Text>
+            <Text style={[styles.authors, { color: colors.textMuted }]}>By {comic.authors.join(", ")}</Text>
           ) : null}
 
           <View style={styles.genreRow}>
             {comic.genres?.map((g) => (
               <View key={g} style={styles.genreTag}>
-                <Text style={styles.genreText}>{g}</Text>
+                <Text style={[styles.genreText, { color: colors.pink }]}>{g}</Text>
               </View>
             ))}
           </View>
@@ -130,7 +132,7 @@ export default function ComicDetailScreen({ route, navigation }) {
           <View style={styles.actionRow}>
             {chapters.length > 0 && (
               <TouchableOpacity
-                style={styles.readBtn}
+                style={[styles.readBtn, { backgroundColor: colors.accent }]}
                 onPress={() => openChapter(chapters[chapters.length - 1])}
               >
                 <Ionicons name="book" size={18} color="#fff" />
@@ -138,26 +140,26 @@ export default function ComicDetailScreen({ route, navigation }) {
               </TouchableOpacity>
             )}
             <TouchableOpacity
-              style={[styles.actionBtn, inList && styles.actionBtnActive]}
+              style={[styles.actionBtn, { backgroundColor: colors.card, borderColor: colors.border }, inList && { borderColor: colors.accent, backgroundColor: "rgba(139,92,246,0.1)" }]}
               onPress={toggleWatchlist}
             >
               <Ionicons
                 name={inList ? "bookmark" : "bookmark-outline"}
                 size={20}
-                color={inList ? COLORS.accent : COLORS.text}
+                color={inList ? colors.accent : colors.text}
               />
             </TouchableOpacity>
           </View>
 
           {desc ? (
             <>
-              <Text style={styles.sectionTitle}>Description</Text>
-              <Text style={styles.description}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Description</Text>
+              <Text style={[styles.description, { color: colors.textSecondary }]}>
                 {showFullDesc ? desc : shortDesc}
               </Text>
               {desc.length > 200 ? (
                 <TouchableOpacity onPress={() => setShowFullDesc(!showFullDesc)}>
-                  <Text style={styles.readMore}>
+                  <Text style={[styles.readMore, { color: colors.accent }]}>
                     {showFullDesc ? "Show less" : "Read more"}
                   </Text>
                 </TouchableOpacity>
@@ -165,7 +167,7 @@ export default function ComicDetailScreen({ route, navigation }) {
             </>
           ) : null}
 
-          <Text style={styles.sectionTitle}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
             Chapters ({chapters.length}{hasMoreChapters ? "+" : ""})
           </Text>
         </View>
@@ -173,33 +175,33 @@ export default function ComicDetailScreen({ route, navigation }) {
         {chapters.map((ch) => (
           <TouchableOpacity
             key={ch.id}
-            style={styles.chapterItem}
+            style={[styles.chapterItem, { borderColor: colors.border }]}
             onPress={() => openChapter(ch)}
           >
             <View style={{ flex: 1 }}>
-              <Text style={styles.chapterTitle}>
+              <Text style={[styles.chapterTitle, { color: colors.text }]}>
                 Chapter {ch.chapterNumber}
                 {ch.title ? ` — ${ch.title}` : ""}
               </Text>
               {ch.date ? (
-                <Text style={styles.chapterDate}>
+                <Text style={[styles.chapterDate, { color: colors.textMuted }]}>
                   {new Date(ch.date).toLocaleDateString()}
                 </Text>
               ) : null}
             </View>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </TouchableOpacity>
         ))}
 
         {hasMoreChapters && (
           <TouchableOpacity
-            style={styles.loadMoreBtn}
+            style={[styles.loadMoreBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={() => loadChapters(chapterPage + 1)}
           >
             {loadingChapters ? (
-              <ActivityIndicator color={COLORS.accent} />
+              <ActivityIndicator color={colors.accent} />
             ) : (
-              <Text style={styles.loadMoreText}>Load More Chapters</Text>
+              <Text style={[styles.loadMoreText, { color: colors.accent }]}>Load More Chapters</Text>
             )}
           </TouchableOpacity>
         )}
@@ -218,38 +220,34 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: SPACING.lg, marginTop: -30 },
   title: { color: "#fff", fontSize: 22, fontWeight: "800" },
   metaRow: { flexDirection: "row", alignItems: "center", marginTop: SPACING.md, gap: SPACING.sm, flexWrap: "wrap" },
-  meta: { color: COLORS.textSecondary, fontSize: 13, backgroundColor: COLORS.card, paddingHorizontal: SPACING.sm, paddingVertical: 3, borderRadius: RADIUS.sm, overflow: "hidden" },
-  authors: { color: COLORS.textMuted, fontSize: 13, marginTop: SPACING.sm },
+  meta: { fontSize: 13, paddingHorizontal: SPACING.sm, paddingVertical: 3, borderRadius: RADIUS.sm, overflow: "hidden" },
+  authors: { fontSize: 13, marginTop: SPACING.sm },
   genreRow: { flexDirection: "row", flexWrap: "wrap", marginTop: SPACING.md, gap: SPACING.xs },
   genreTag: { backgroundColor: "rgba(217,70,239,0.15)", paddingHorizontal: SPACING.sm, paddingVertical: 4, borderRadius: RADIUS.sm },
-  genreText: { color: COLORS.pink, fontSize: 12, fontWeight: "600" },
+  genreText: { fontSize: 12, fontWeight: "600" },
   actionRow: { flexDirection: "row", marginTop: SPACING.lg, gap: SPACING.md },
-  readBtn: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: COLORS.accent, paddingHorizontal: SPACING.xl, paddingVertical: SPACING.md, borderRadius: RADIUS.md },
+  readBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: SPACING.xl, paddingVertical: SPACING.md, borderRadius: RADIUS.md },
   readBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
-  actionBtn: { backgroundColor: COLORS.card, padding: SPACING.md, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border },
-  actionBtnActive: { borderColor: COLORS.accent, backgroundColor: "rgba(139,92,246,0.1)" },
-  sectionTitle: { color: COLORS.text, fontSize: 18, fontWeight: "700", marginTop: SPACING.xl, marginBottom: SPACING.sm },
-  description: { color: COLORS.textSecondary, fontSize: 14, lineHeight: 22 },
-  readMore: { color: COLORS.accent, fontWeight: "600", marginTop: SPACING.xs },
+  actionBtn: { padding: SPACING.md, borderRadius: RADIUS.md, borderWidth: 1 },
+  sectionTitle: { fontSize: 18, fontWeight: "700", marginTop: SPACING.xl, marginBottom: SPACING.sm },
+  description: { fontSize: 14, lineHeight: 22 },
+  readMore: { fontWeight: "600", marginTop: SPACING.xs },
   chapterItem: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     borderBottomWidth: 1,
-    borderColor: COLORS.border,
   },
-  chapterTitle: { color: COLORS.text, fontSize: 14, fontWeight: "500" },
-  chapterDate: { color: COLORS.textMuted, fontSize: 11, marginTop: 2 },
+  chapterTitle: { fontSize: 14, fontWeight: "500" },
+  chapterDate: { fontSize: 11, marginTop: 2 },
   loadMoreBtn: {
     marginHorizontal: SPACING.lg,
     marginTop: SPACING.md,
     padding: SPACING.md,
     borderRadius: RADIUS.md,
-    backgroundColor: COLORS.card,
     borderWidth: 1,
-    borderColor: COLORS.border,
     alignItems: "center",
   },
-  loadMoreText: { color: COLORS.accent, fontWeight: "600", fontSize: 14 },
+  loadMoreText: { fontWeight: "600", fontSize: 14 },
 });

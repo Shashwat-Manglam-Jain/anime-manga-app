@@ -1,8 +1,11 @@
-import React from "react";
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
-import { COLORS, RADIUS, SPACING } from "../utils/theme";
+import React, { memo } from "react";
+import { Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
+import { useTheme } from "../utils/ThemeContext";
+import { RADIUS, SPACING } from "../utils/theme";
 
-export default function FilterTabs({ tabs, active, onPress }) {
+function FilterTabs({ tabs, active, onPress }) {
+  const { colors } = useTheme();
+
   return (
     <ScrollView
       horizontal
@@ -14,10 +17,20 @@ export default function FilterTabs({ tabs, active, onPress }) {
         return (
           <TouchableOpacity
             key={tab.value}
-            style={[styles.tab, isActive && styles.tabActive]}
+            style={[
+              styles.tab,
+              { backgroundColor: colors.card, borderColor: colors.border },
+              isActive && { backgroundColor: colors.accent, borderColor: colors.accent },
+            ]}
             onPress={() => onPress(tab.value)}
           >
-            <Text style={[styles.text, isActive && styles.textActive]}>
+            <Text
+              style={[
+                styles.text,
+                { color: colors.textSecondary },
+                isActive && styles.textActive,
+              ]}
+            >
               {tab.label}
             </Text>
           </TouchableOpacity>
@@ -27,26 +40,23 @@ export default function FilterTabs({ tabs, active, onPress }) {
   );
 }
 
+export default memo(FilterTabs);
+
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
+    paddingVertical: SPACING.sm,
     gap: SPACING.sm,
   },
   tab: {
     paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
+    paddingVertical: 6,
     borderRadius: RADIUS.full,
-    backgroundColor: COLORS.card,
     borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  tabActive: {
-    backgroundColor: COLORS.accent,
-    borderColor: COLORS.accent,
+    minWidth: 60,
+    alignItems: "center",
   },
   text: {
-    color: COLORS.textSecondary,
     fontSize: 13,
     fontWeight: "600",
   },
