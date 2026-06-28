@@ -43,27 +43,25 @@ export default function NovelDetailScreen({ route, navigation }) {
         setLoading(false);
 
         const searchTitle = info?.title || paramTitle || id;
+        const altTitle = info?.titleAlt || null;
+        const queries = [searchTitle];
+        if (altTitle && altTitle !== searchTitle) queries.push(altTitle);
+
+        let found = false;
         try {
-          const nbResults = await searchNovelBin(searchTitle);
-          if (nbResults.length > 0) {
-            const slug = nbResults[0].id;
-            const ch = await getNovelBinChapters(slug);
-            setChapters(ch);
-          } else {
-            const altTitle = info?.titleAlt || searchTitle;
-            if (altTitle !== searchTitle) {
-              const altResults = await searchNovelBin(altTitle);
-              if (altResults.length > 0) {
-                const slug = altResults[0].id;
-                const ch = await getNovelBinChapters(slug);
+          for (const q of queries) {
+            if (found) break;
+            const results = await searchNovelBin(q);
+            if (results.length > 0) {
+              const slug = results[0].id;
+              const ch = await getNovelBinChapters(slug);
+              if (ch.length > 0) {
                 setChapters(ch);
-              } else {
-                setScrapeError(true);
+                found = true;
               }
-            } else {
-              setScrapeError(true);
             }
           }
+          if (!found) setScrapeError(true);
         } catch (e) {
           console.log("Chapter scrape error:", e.message);
           setScrapeError(true);
@@ -102,7 +100,7 @@ export default function NovelDetailScreen({ route, navigation }) {
   const displayChapters = showAllChapters ? chapters : chapters.slice(0, 50);
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper edges={["left", "right", "bottom"]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.bannerWrap}>
           {novel?.image ? (
@@ -160,6 +158,7 @@ export default function NovelDetailScreen({ route, navigation }) {
                   chapterId: chapters[0].id,
                   chapterTitle: chapters[0].title,
                   novelTitle: novel?.title || paramTitle,
+                  chapterSource: chapters[0].source || null,
                 })}
               >
                 <Ionicons name="book" size={18} color="#fff" />
@@ -207,6 +206,7 @@ export default function NovelDetailScreen({ route, navigation }) {
                   chapterId: ch.id,
                   chapterTitle: ch.title,
                   novelTitle: novel?.title || paramTitle,
+                  chapterSource: ch.source || null,
                 })}
               >
                 <View style={[styles.chNumWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>

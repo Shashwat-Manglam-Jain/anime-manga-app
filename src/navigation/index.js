@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { NavigationContainer, DefaultTheme, DarkTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
+import * as ScreenOrientation from "expo-screen-orientation";
 import { useTheme } from "../utils/ThemeContext";
 
 import HomeScreen from "../screens/HomeScreen";
@@ -27,8 +28,10 @@ import VideoPlayerScreen from "../screens/VideoPlayerScreen";
 import CollectionsScreen from "../screens/CollectionsScreen";
 import TopRatedScreen from "../screens/TopRatedScreen";
 import ChartsScreen from "../screens/ChartsScreen";
-import HindiSeriesScreen from "../screens/HindiSeriesScreen";
 import MoreScreen from "../screens/MoreScreen";
+import CharacterDetailScreen from "../screens/CharacterDetailScreen";
+import SettingsScreen from "../screens/SettingsScreen";
+import HindiSeriesScreen from "../screens/HindiSeriesScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -52,9 +55,9 @@ function TabNavigator() {
           backgroundColor: colors.tabBar,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 6,
+          height: 70,
+          paddingBottom: 14,
+          paddingTop: 8,
           elevation: 12,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: -2 },
@@ -63,7 +66,7 @@ function TabNavigator() {
         },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarLabelStyle: { fontSize: 10, fontWeight: "600" },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: "600", marginTop: 2 },
         tabBarIcon: ({ focused, color }) => {
           const icons = TAB_ICONS[route.name];
           return (
@@ -87,6 +90,10 @@ function TabNavigator() {
 
 export default function Navigation() {
   const { isDark, colors } = useTheme();
+
+  useEffect(() => {
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+  }, []);
 
   const navTheme = {
     dark: isDark,
@@ -122,6 +129,8 @@ export default function Navigation() {
         <Stack.Screen name="Collections" component={CollectionsScreen} />
         <Stack.Screen name="TopRated" component={TopRatedScreen} />
         <Stack.Screen name="Charts" component={ChartsScreen} />
+        <Stack.Screen name="CharacterDetail" component={CharacterDetailScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="HindiSeries" component={HindiSeriesScreen} />
       </Stack.Navigator>
     </NavigationContainer>

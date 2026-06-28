@@ -92,7 +92,7 @@ export default function MovieDetailScreen({ route, navigation }) {
   const backdrop = img(movie.backdrop_path, "w780") || img(movie.poster_path);
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper edges={["left", "right", "bottom"]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.bannerWrap}>
           <Image source={{ uri: backdrop }} style={styles.banner} />
@@ -163,14 +163,19 @@ export default function MovieDetailScreen({ route, navigation }) {
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Cast</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {cast.map((c) => (
-                  <View key={c.id} style={styles.castCard}>
+                  <TouchableOpacity
+                    key={c.id}
+                    style={styles.castCard}
+                    activeOpacity={0.7}
+                    onPress={() => navigation.navigate("CharacterDetail", { id: c.id, type: "tmdb" })}
+                  >
                     <Image
                       source={{ uri: c.profile_path ? img(c.profile_path, "w185") : "https://via.placeholder.com/100x100?text=?" }}
                       style={[styles.castImg, { backgroundColor: colors.card }]}
                     />
                     <Text style={[styles.castName, { color: colors.text }]} numberOfLines={1}>{c.name}</Text>
                     <Text style={[styles.castChar, { color: colors.textMuted }]} numberOfLines={1}>{c.character}</Text>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </ScrollView>
             </>

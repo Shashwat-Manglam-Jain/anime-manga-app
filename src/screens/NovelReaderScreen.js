@@ -15,16 +15,18 @@ import { useTheme } from "../utils/ThemeContext";
 
 export default function NovelReaderScreen({ route, navigation }) {
   const { colors } = useTheme();
-  const { chapterId, chapterTitle, novelTitle } = route.params;
+  const { chapterId, chapterTitle, novelTitle, chapterSource } = route.params;
   const [content, setContent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fontSize, setFontSize] = useState(16);
+  const [activeSource, setActiveSource] = useState(chapterSource || null);
 
   const loadChapter = async (id) => {
     setLoading(true);
     try {
       const data = await readNovelBinChapter(id);
       setContent(data);
+      if (data.source) setActiveSource(data.source);
     } catch (err) {
       setContent({ title: "Error", content: "Failed to load chapter. " + err.message, prevChapter: null, nextChapter: null });
     }
@@ -38,6 +40,7 @@ export default function NovelReaderScreen({ route, navigation }) {
       chapterId: id,
       chapterTitle: "",
       novelTitle,
+      chapterSource: activeSource,
     });
   };
 

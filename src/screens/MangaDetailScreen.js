@@ -70,7 +70,7 @@ export default function MangaDetailScreen({ route, navigation }) {
   const shortDesc = desc.length > 200 ? desc.slice(0, 200) + "..." : desc;
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper edges={["left", "right", "bottom"]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.bannerWrap}>
           <Image source={{ uri: manga.cover }} style={styles.banner} />

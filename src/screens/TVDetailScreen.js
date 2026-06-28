@@ -28,6 +28,7 @@ export default function TVDetailScreen({ route, navigation }) {
   const [similar, setSimilar] = useState([]);
   const [inList, setInList] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [selectedSeason, setSelectedSeason] = useState(1);
 
   useEffect(() => {
     setLoading(true);
@@ -106,7 +107,7 @@ export default function TVDetailScreen({ route, navigation }) {
   const overview = show.overview || "";
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper edges={["left", "right", "bottom"]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.bannerWrap}>
           <Image source={{ uri: backdrop }} style={styles.banner} />
@@ -141,9 +142,9 @@ export default function TVDetailScreen({ route, navigation }) {
           </View>
 
           <View style={styles.actionRow}>
-            <TouchableOpacity style={[styles.watchBtn, { backgroundColor: colors.accent }]} onPress={() => handleWatch(1, 1)}>
+            <TouchableOpacity style={[styles.watchBtn, { backgroundColor: colors.accent }]} onPress={() => handleWatch(selectedSeason, 1)}>
               <Ionicons name="play" size={18} color="#fff" />
-              <Text style={styles.watchBtnText}>Watch S1 E1</Text>
+              <Text style={styles.watchBtnText}>Watch Now</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.actionBtn, { backgroundColor: colors.card, borderColor: colors.border }, inList && { borderColor: colors.accent }]}
@@ -160,42 +161,88 @@ export default function TVDetailScreen({ route, navigation }) {
             </>
           ) : null}
 
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Seasons</Text>
-          {show.seasons?.filter((s) => s.season_number > 0).map((s) => (
-            <TouchableOpacity
-              key={s.id}
-              style={[styles.seasonItem, { borderColor: colors.border }]}
-              onPress={() => handleWatch(s.season_number, 1)}
-            >
-              {s.poster_path ? (
-                <Image source={{ uri: img(s.poster_path, "w92") }} style={[styles.seasonPoster, { backgroundColor: colors.card }]} />
-              ) : (
-                <View style={[styles.seasonPoster, { backgroundColor: colors.card, justifyContent: "center", alignItems: "center" }]}>
-                  <Ionicons name="image-outline" size={20} color={colors.textMuted} />
+          {(() => {
+            const seasons = show.seasons?.filter((s) => s.season_number > 0) || [];
+            const totalSeasons = seasons.length;
+            const currentSeasonData = seasons.find((s) => s.season_number === selectedSeason);
+            const episodeCount = currentSeasonData?.episode_count || show.number_of_episodes || 10;
+
+            return (
+              <>
+                {totalSeasons > 1 && (
+                  <>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Season</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.seasonPillRow}>
+                      {seasons.map((s) => (
+                        <TouchableOpacity
+                          key={s.id}
+                          style={[
+                            styles.seasonPill,
+                            { backgroundColor: colors.card, borderColor: colors.border },
+                            selectedSeason === s.season_number && { backgroundColor: colors.accent, borderColor: colors.accent },
+                          ]}
+                          onPress={() => setSelectedSeason(s.season_number)}
+                        >
+                          <Text
+                            style={[
+                              styles.seasonPillText,
+                              { color: colors.textSecondary },
+                              selectedSeason === s.season_number && { color: "#fff" },
+                            ]}
+                          >
+                            S{s.season_number}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.seasonPillSub,
+                              { color: colors.textMuted },
+                              selectedSeason === s.season_number && { color: "rgba(255,255,255,0.7)" },
+                            ]}
+                          >
+                            {s.episode_count} eps
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </>
+                )}
+
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                  Episodes{totalSeasons > 1 ? ` — Season ${selectedSeason}` : ""} ({episodeCount})
+                </Text>
+                <View style={styles.epGrid}>
+                  {Array.from({ length: episodeCount }, (_, i) => i + 1).map((ep) => (
+                    <TouchableOpacity
+                      key={ep}
+                      style={[styles.epGridBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+                      onPress={() => handleWatch(selectedSeason, ep)}
+                    >
+                      <Text style={[styles.epGridText, { color: colors.textSecondary }]}>{ep}</Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
-              )}
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.seasonTitle, { color: colors.text }]}>{s.name}</Text>
-                <Text style={[styles.seasonSub, { color: colors.textMuted }]}>{s.episode_count} episodes</Text>
-                {s.air_date ? <Text style={[styles.seasonDate, { color: colors.textMuted }]}>{s.air_date.split("-")[0]}</Text> : null}
-              </View>
-              <Ionicons name="play-circle" size={28} color={colors.accent} />
-            </TouchableOpacity>
-          ))}
+              </>
+            );
+          })()}
 
           {cast.length > 0 ? (
             <>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Cast</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {cast.map((c) => (
-                  <View key={c.id} style={styles.castCard}>
+                  <TouchableOpacity
+                    key={c.id}
+                    style={styles.castCard}
+                    activeOpacity={0.7}
+                    onPress={() => navigation.navigate("CharacterDetail", { id: c.id, type: "tmdb" })}
+                  >
                     <Image
                       source={{ uri: c.profile_path ? img(c.profile_path, "w185") : "https://via.placeholder.com/100?text=?" }}
                       style={[styles.castImg, { backgroundColor: colors.card }]}
                     />
                     <Text style={[styles.castName, { color: colors.text }]} numberOfLines={1}>{c.name}</Text>
                     <Text style={[styles.castChar, { color: colors.textMuted }]} numberOfLines={1}>{c.character}</Text>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </ScrollView>
             </>
@@ -232,11 +279,26 @@ const styles = StyleSheet.create({
   actionBtn: { padding: SPACING.md, borderRadius: RADIUS.md, borderWidth: 1 },
   sectionTitle: { fontSize: 18, fontWeight: "700", marginTop: SPACING.xl, marginBottom: SPACING.sm },
   overview: { fontSize: 14, lineHeight: 22 },
-  seasonItem: { flexDirection: "row", alignItems: "center", paddingVertical: SPACING.md, borderBottomWidth: 1, gap: SPACING.md },
-  seasonPoster: { width: 50, height: 75, borderRadius: RADIUS.sm },
-  seasonTitle: { fontSize: 15, fontWeight: "600" },
-  seasonSub: { fontSize: 12, marginTop: 2 },
-  seasonDate: { fontSize: 11, marginTop: 1 },
+  seasonPillRow: { gap: SPACING.sm },
+  seasonPill: {
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+  seasonPillText: { fontSize: 14, fontWeight: "700" },
+  seasonPillSub: { fontSize: 10, marginTop: 2 },
+  epGrid: { flexDirection: "row", flexWrap: "wrap", gap: SPACING.xs },
+  epGridBtn: {
+    width: 48,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+  },
+  epGridText: { fontSize: 13, fontWeight: "600" },
   castCard: { width: 80, marginRight: SPACING.md, alignItems: "center" },
   castImg: { width: 70, height: 70, borderRadius: 35 },
   castName: { fontSize: 11, fontWeight: "600", marginTop: 4, textAlign: "center" },

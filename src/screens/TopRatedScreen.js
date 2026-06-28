@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -7,11 +7,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import ScreenWrapper from "../components/ScreenWrapper";
+import { SkeletonGrid } from "../components/SkeletonLoader";
 import { useTheme } from "../utils/ThemeContext";
-import { TOP_MOVIES, TOP_TV_SHOWS } from "../data/curated";
+import { getTopRated, getTopRatedTV, img } from "../api/tmdb";
 import { RADIUS, SPACING } from "../utils/theme";
 
 const { width } = Dimensions.get("window");
@@ -22,10 +24,90 @@ const CARD_W = (width - SPACING.lg * 2 - GAP * (COLS - 1)) / COLS;
 export default function TopRatedScreen({ navigation }) {
   const { colors } = useTheme();
   const [tab, setTab] = useState("movies");
+  const [movieData, setMovieData] = useState([]);
+  const [tvData, setTvData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  const data = tab === "movies"
-    ? TOP_MOVIES.map((m) => ({ ...m, id: m.tmdbId, type: "movie" }))
-    : TOP_TV_SHOWS.map((s) => ({ ...s, id: s.tmdbId, type: "tv" }));
+  const moviePageRef = useRef(1);
+  const tvPageRef = useRef(1);
+  const movieHasMoreRef = useRef(true);
+  const tvHasMoreRef = useRef(true);
+
+  const formatMovie = (item) => ({
+    id: item.id,
+    type: "movie",
+    title: item.title,
+    poster: img(item.poster_path),
+    rating: item.vote_average?.toFixed(1),
+    year: (item.release_date || "").split("-")[0],
+  });
+
+  const formatTV = (item) => ({
+    id: item.id,
+    type: "tv",
+    title: item.name || item.title,
+    poster: img(item.poster_path),
+    rating: item.vote_average?.toFixed(1),
+    year: (item.first_air_date || "").split("-")[0],
+  });
+
+  const loadInitial = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [moviesRes, tvRes] = await Promise.all([
+        getTopRated(1),
+        getTopRatedTV(1),
+      ]);
+      setMovieData(moviesRes.results.map(formatMovie));
+      setTvData(tvRes.results.map(formatTV));
+      moviePageRef.current = 1;
+      tvPageRef.current = 1;
+      movieHasMoreRef.current = moviesRes.page < moviesRes.total_pages;
+      tvHasMoreRef.current = tvRes.page < tvRes.total_pages;
+    } catch (err) {
+      console.log("TopRated load error:", err.message);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    loadInitial();
+  }, []);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore) return;
+
+    if (tab === "movies") {
+      if (!movieHasMoreRef.current) return;
+      setLoadingMore(true);
+      try {
+        const nextPage = moviePageRef.current + 1;
+        const res = await getTopRated(nextPage);
+        setMovieData((prev) => [...prev, ...res.results.map(formatMovie)]);
+        moviePageRef.current = nextPage;
+        movieHasMoreRef.current = res.page < res.total_pages;
+      } catch (err) {
+        console.log("Load more movies error:", err.message);
+      }
+      setLoadingMore(false);
+    } else {
+      if (!tvHasMoreRef.current) return;
+      setLoadingMore(true);
+      try {
+        const nextPage = tvPageRef.current + 1;
+        const res = await getTopRatedTV(nextPage);
+        setTvData((prev) => [...prev, ...res.results.map(formatTV)]);
+        tvPageRef.current = nextPage;
+        tvHasMoreRef.current = res.page < res.total_pages;
+      } catch (err) {
+        console.log("Load more TV error:", err.message);
+      }
+      setLoadingMore(false);
+    }
+  }, [tab, loadingMore]);
+
+  const data = tab === "movies" ? movieData : tvData;
 
   const goDetail = useCallback((item) => {
     if (item.type === "movie") navigation.navigate("MovieDetail", { id: item.id });
@@ -66,35 +148,48 @@ export default function TopRatedScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={data}
-        numColumns={COLS}
-        keyExtractor={(item) => `${item.type}-${item.id}`}
-        contentContainerStyle={{ paddingHorizontal: SPACING.lg, paddingBottom: 100, paddingTop: SPACING.sm }}
-        columnWrapperStyle={{ gap: GAP, marginBottom: GAP }}
-        showsVerticalScrollIndicator={false}
-        removeClippedSubviews
-        renderItem={({ item, index }) => (
-          <TouchableOpacity
-            style={{ width: CARD_W }}
-            activeOpacity={0.7}
-            onPress={() => goDetail(item)}
-          >
-            <View>
-              <Image source={{ uri: item.poster }} style={[styles.poster, { backgroundColor: colors.card }]} />
-              <View style={[styles.rankBadge, { backgroundColor: colors.accent }]}>
-                <Text style={styles.rankText}>{index + 1}</Text>
+      {loading ? (
+        <SkeletonGrid count={9} />
+      ) : (
+        <FlatList
+          data={data}
+          numColumns={COLS}
+          keyExtractor={(item) => `${item.type}-${item.id}`}
+          contentContainerStyle={{ paddingHorizontal: SPACING.lg, paddingBottom: 100, paddingTop: SPACING.sm }}
+          columnWrapperStyle={{ gap: GAP, marginBottom: GAP }}
+          showsVerticalScrollIndicator={false}
+          removeClippedSubviews
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={styles.footer}>
+                <ActivityIndicator color={colors.accent} />
               </View>
-            </View>
-            <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>{item.title}</Text>
-            <View style={styles.metaRow}>
-              <Ionicons name="star" size={10} color="#eab308" />
-              <Text style={styles.rating}>{item.rating}</Text>
-              <Text style={[styles.year, { color: colors.textMuted }]}>{item.year}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
+            ) : null
+          }
+          renderItem={({ item, index }) => (
+            <TouchableOpacity
+              style={{ width: CARD_W }}
+              activeOpacity={0.7}
+              onPress={() => goDetail(item)}
+            >
+              <View>
+                <Image source={{ uri: item.poster }} style={[styles.poster, { backgroundColor: colors.card }]} />
+                <View style={[styles.rankBadge, { backgroundColor: colors.accent }]}>
+                  <Text style={styles.rankText}>{index + 1}</Text>
+                </View>
+              </View>
+              <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>{item.title}</Text>
+              <View style={styles.metaRow}>
+                <Ionicons name="star" size={10} color="#eab308" />
+                <Text style={styles.rating}>{item.rating}</Text>
+                <Text style={[styles.year, { color: colors.textMuted }]}>{item.year}</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+      )}
     </ScreenWrapper>
   );
 }
@@ -146,4 +241,5 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 2 },
   rating: { color: "#eab308", fontSize: 11, fontWeight: "600" },
   year: { fontSize: 11 },
+  footer: { paddingVertical: SPACING.lg, alignItems: "center" },
 });

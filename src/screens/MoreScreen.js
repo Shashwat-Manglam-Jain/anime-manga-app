@@ -1,14 +1,12 @@
 import React from "react";
-import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Switch } from "react-native";
+import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import ScreenWrapper from "../components/ScreenWrapper";
 import { useTheme } from "../utils/ThemeContext";
-import { HINDI_WEB_SERIES, TOP_MOVIES } from "../data/curated";
+import { TOP_MOVIES } from "../data/curated";
 import { RADIUS, SPACING } from "../utils/theme";
 
 const { width } = Dimensions.get("window");
-const MINI_W = 70;
-
 const BROWSE = [
   { icon: "tv-outline", label: "TV Series", screen: "TVBrowse", color: "#3b82f6" },
   { icon: "book-outline", label: "Manga", screen: "MangaBrowse", color: "#22c55e" },
@@ -21,6 +19,7 @@ const LIBRARY = [
   { icon: "albums-outline", label: "Collections", screen: "Collections", color: "#ef4444" },
   { icon: "bar-chart-outline", label: "Charts & Browse", screen: "Charts", color: "#06b6d4" },
   { icon: "star-outline", label: "Top Rated", screen: "TopRated", color: "#f97316" },
+  { icon: "settings-outline", label: "Settings", screen: "Settings", color: "#64748b" },
 ];
 
 export default function MoreScreen({ navigation }) {
@@ -31,38 +30,14 @@ export default function MoreScreen({ navigation }) {
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.topRow}>
           <Text style={[styles.heading, { color: colors.text }]}>More</Text>
-          <View style={[styles.themeToggle, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Ionicons name={isDark ? "moon" : "sunny"} size={18} color={isDark ? "#a78bfa" : "#f59e0b"} />
-            <Switch
-              value={isDark}
-              onValueChange={toggleTheme}
-              trackColor={{ false: "#d1d5db", true: "#6d28d9" }}
-              thumbColor={isDark ? "#a78bfa" : "#f59e0b"}
-              style={{ transform: [{ scale: 0.8 }] }}
-            />
-          </View>
+          <TouchableOpacity
+            style={[styles.themeToggle, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={toggleTheme}
+            activeOpacity={0.7}
+          >
+            <Ionicons name={isDark ? "moon" : "sunny"} size={22} color={isDark ? "#a78bfa" : "#f59e0b"} />
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          style={[styles.hindiCard, { backgroundColor: "#f97316" + "15", borderColor: "#f97316" + "30" }]}
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate("HindiSeries")}
-        >
-          <View style={styles.hindiLeft}>
-            <View style={styles.hindiBadge}>
-              <Ionicons name="flag" size={16} color="#fff" />
-            </View>
-            <View>
-              <Text style={[styles.hindiTitle, { color: colors.text }]}>Hindi Web Series</Text>
-              <Text style={[styles.hindiSub, { color: colors.textMuted }]}>Top rated Indian shows</Text>
-            </View>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} pointerEvents="none">
-            {HINDI_WEB_SERIES.slice(0, 5).map((s) => (
-              <Image key={s.tmdbId} source={{ uri: s.poster }} style={[styles.hindiPoster, { backgroundColor: colors.card }]} />
-            ))}
-          </ScrollView>
-        </TouchableOpacity>
 
         <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>Browse</Text>
         <View style={styles.grid}>
@@ -134,11 +109,10 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   themeToggle: {
-    flexDirection: "row",
+    width: 42,
+    height: 42,
+    justifyContent: "center",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 4,
     borderRadius: RADIUS.full,
     borderWidth: 1,
   },
@@ -150,34 +124,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     marginTop: SPACING.lg,
     marginBottom: SPACING.sm,
-  },
-  hindiCard: {
-    marginHorizontal: SPACING.lg,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    borderWidth: 1,
-  },
-  hindiLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.sm,
-    marginBottom: SPACING.sm,
-  },
-  hindiBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: RADIUS.sm,
-    backgroundColor: "#f97316",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  hindiTitle: { fontSize: 16, fontWeight: "700" },
-  hindiSub: { fontSize: 12 },
-  hindiPoster: {
-    width: MINI_W,
-    height: MINI_W * 1.4,
-    borderRadius: RADIUS.sm,
-    marginRight: SPACING.sm,
   },
   grid: {
     flexDirection: "row",

@@ -3,12 +3,12 @@ import {
   View,
   Text,
   TextInput,
-  Image,
   FlatList,
   TouchableOpacity,
   StyleSheet,
   Dimensions,
 } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import ScreenWrapper from "../components/ScreenWrapper";
 import { SkeletonGrid } from "../components/SkeletonLoader";
@@ -29,18 +29,28 @@ export default function ComicsScreen({ navigation }) {
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [page, setPage] = useState(1);
+  const [error, setError] = useState(false);
+  const loadingRef = React.useRef(false);
 
   const loadBrowse = async (p = 1) => {
-    if (p === 1) setLoading(true);
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+    if (p === 1) { setLoading(true); setError(false); }
     else setLoadingMore(true);
     try {
       const items = await browseComics(p);
-      setData((prev) => (p === 1 ? items : [...prev, ...items]));
+      if (items && items.length > 0) {
+        setData((prev) => (p === 1 ? items : [...prev, ...items]));
+      } else if (p === 1) {
+        setError(true);
+      }
     } catch (err) {
       console.log("ComicK browse error:", err.message);
+      if (p === 1) setError(true);
     }
     setLoading(false);
     setLoadingMore(false);
+    loadingRef.current = false;
   };
 
   useEffect(() => { loadBrowse(1); }, []);
@@ -99,6 +109,17 @@ export default function ComicsScreen({ navigation }) {
 
       {loading && data.length === 0 ? (
         <SkeletonGrid count={12} />
+      ) : error && data.length === 0 ? (
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 80 }}>
+          <Ionicons name="cloud-offline-outline" size={48} color={colors.textMuted} />
+          <Text style={{ color: colors.textMuted, fontSize: 15, fontWeight: "600", marginTop: SPACING.md }}>Failed to load comics</Text>
+          <TouchableOpacity
+            style={{ marginTop: SPACING.lg, paddingHorizontal: SPACING.xl, paddingVertical: SPACING.sm, backgroundColor: colors.accent, borderRadius: RADIUS.md }}
+            onPress={() => { setPage(1); loadBrowse(1); }}
+          >
+            <Text style={{ color: "#fff", fontWeight: "700" }}>Retry</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <FlatList
           data={data}
@@ -120,8 +141,9 @@ export default function ComicsScreen({ navigation }) {
               onPress={() => navigation.navigate("ComicDetail", { id: item.id, title: item.title })}
             >
               <Image
-                source={{ uri: item.cover || "https://via.placeholder.com/300x450?text=?" }}
+                source={{ uri: item.cover || "https://via.placeholder.com/300x450?text=?", headers: { Referer: "https://comick.art/" } }}
                 style={[styles.poster, { backgroundColor: colors.card }]}
+                contentFit="cover"
               />
               <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={2}>{item.title}</Text>
               {item.status ? (

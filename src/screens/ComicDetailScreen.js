@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  Image,
   ScrollView,
   FlatList,
   TouchableOpacity,
@@ -10,6 +9,7 @@ import {
   Dimensions,
   ActivityIndicator,
 } from "react-native";
+import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import ScreenWrapper from "../components/ScreenWrapper";
@@ -79,6 +79,9 @@ export default function ComicDetailScreen({ route, navigation }) {
   const openChapter = (chapter) => {
     navigation.navigate("ComicReader", {
       chapterId: chapter.id,
+      chapterNumber: chapter.chapterNumber,
+      chapterLang: chapter.lang || "en",
+      comicSlug: chapter.slug || id,
       chapterTitle: chapter.title || `Chapter ${chapter.chapterNumber}`,
       comicTitle: comic?.title || navTitle,
     });
@@ -95,12 +98,13 @@ export default function ComicDetailScreen({ route, navigation }) {
   const shortDesc = desc.length > 200 ? desc.slice(0, 200) + "..." : desc;
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper edges={["left", "right", "bottom"]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.bannerWrap}>
           <Image
-            source={{ uri: comic.cover || "https://via.placeholder.com/400x600?text=?" }}
+            source={{ uri: comic.cover || "https://via.placeholder.com/400x600?text=?", headers: { Referer: "https://comick.art/" } }}
             style={styles.banner}
+            contentFit="cover"
           />
           <LinearGradient colors={["transparent", colors.bg]} style={styles.gradient} />
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
@@ -214,7 +218,7 @@ export default function ComicDetailScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   bannerWrap: { width, height: height * 0.4 },
-  banner: { width: "100%", height: "100%", resizeMode: "cover" },
+  banner: { width: "100%", height: "100%" },
   gradient: { position: "absolute", bottom: 0, left: 0, right: 0, height: "60%" },
   backBtn: { position: "absolute", top: 44, left: SPACING.lg, backgroundColor: "rgba(0,0,0,0.5)", borderRadius: RADIUS.full, padding: SPACING.sm },
   content: { paddingHorizontal: SPACING.lg, marginTop: -30 },

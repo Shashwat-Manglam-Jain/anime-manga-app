@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, memo } from "react";
+import React, { useRef, useState, useEffect, useCallback, memo } from "react";
 import {
   View,
   Text,
@@ -20,16 +20,70 @@ function FeaturedCarousel({ items, onPress }) {
   const { colors } = useTheme();
   const flatRef = useRef(null);
   const [activeIdx, setActiveIdx] = useState(0);
+  const autoTimer = useRef(null);
+  const userScrolling = useRef(false);
+
+  const count = items?.length || 0;
+
+  const loopedData = count > 0
+    ? [...items.map((it, i) => ({ ...it, _key: `pre-${i}` })),
+       ...items.map((it, i) => ({ ...it, _key: `mid-${i}` })),
+       ...items.map((it, i) => ({ ...it, _key: `post-${i}` }))]
+    : [];
 
   useEffect(() => {
-    if (!items?.length) return;
-    const timer = setInterval(() => {
-      const next = (activeIdx + 1) % items.length;
-      flatRef.current?.scrollToIndex({ index: next, animated: true });
-      setActiveIdx(next);
+    if (!count) return;
+    const timer = setTimeout(() => {
+      flatRef.current?.scrollToOffset({ offset: count * width, animated: false });
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [count]);
+
+  const resetAutoAdvance = useCallback(() => {
+    if (autoTimer.current) clearInterval(autoTimer.current);
+    if (!count) return;
+    autoTimer.current = setInterval(() => {
+      if (userScrolling.current) return;
+      setActiveIdx((prev) => {
+        const next = (prev + 1) % count;
+        const absoluteIdx = count + next;
+        flatRef.current?.scrollToIndex({ index: absoluteIdx, animated: true });
+        return next;
+      });
     }, 5000);
-    return () => clearInterval(timer);
-  }, [activeIdx, items?.length]);
+  }, [count]);
+
+  useEffect(() => {
+    resetAutoAdvance();
+    return () => { if (autoTimer.current) clearInterval(autoTimer.current); };
+  }, [count, resetAutoAdvance]);
+
+  const handleScroll = useCallback((e) => {
+    const offsetX = e.nativeEvent.contentOffset.x;
+    const absoluteIdx = Math.round(offsetX / width);
+    const realIdx = ((absoluteIdx % count) + count) % count;
+    setActiveIdx(realIdx);
+  }, [count]);
+
+  const handleScrollEnd = useCallback((e) => {
+    userScrolling.current = false;
+    if (!count) return;
+    const offsetX = e.nativeEvent.contentOffset.x;
+    const absoluteIdx = Math.round(offsetX / width);
+    const realIdx = ((absoluteIdx % count) + count) % count;
+
+    setActiveIdx(realIdx);
+
+    if (absoluteIdx < count || absoluteIdx >= count * 2) {
+      const middleIdx = count + realIdx;
+      flatRef.current?.scrollToOffset({ offset: middleIdx * width, animated: false });
+    }
+    resetAutoAdvance();
+  }, [count, resetAutoAdvance]);
+
+  const handleScrollBegin = useCallback(() => {
+    userScrolling.current = true;
+  }, []);
 
   if (!items?.length) return null;
 
@@ -40,12 +94,15 @@ function FeaturedCarousel({ items, onPress }) {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        data={items}
-        keyExtractor={(_, i) => String(i)}
+        data={loopedData}
+        keyExtractor={(item) => item._key}
         removeClippedSubviews
-        onMomentumScrollEnd={(e) => {
-          setActiveIdx(Math.round(e.nativeEvent.contentOffset.x / width));
-        }}
+        scrollEventThrottle={16}
+        getItemLayout={(_, index) => ({ length: width, offset: width * index, index })}
+        onScroll={handleScroll}
+        onScrollBeginDrag={handleScrollBegin}
+        onMomentumScrollEnd={handleScrollEnd}
+        onScrollEndDrag={handleScrollEnd}
         renderItem={({ item }) => (
           <TouchableOpacity
             activeOpacity={0.9}

@@ -1,9 +1,12 @@
 const COMICK_API = "https://comick.art/api";
+const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
-function comickCoverUrl(key) {
-  if (!key) return null;
-  if (key.startsWith("http")) return key;
-  return `https://meo.comick.pictures/${key}`;
+async function comickFetch(path) {
+  const res = await fetch(`${COMICK_API}${path}`, {
+    headers: { "User-Agent": UA },
+  });
+  if (!res.ok) throw new Error(`ComicK ${res.status}`);
+  return res.json();
 }
 
 function comickStatus(status) {
@@ -16,82 +19,72 @@ function comickStatus(status) {
   }
 }
 
-function stripHtml(html) {
-  if (!html || typeof html !== "string") return null;
-  return html.replace(/<[^>]*>/g, "").trim() || null;
+function mapComic(c) {
+  return {
+    id: c.slug || c.hid,
+    title: c.title || c.slug || "Untitled",
+    cover: c.default_thumbnail || null,
+    status: comickStatus(c.status),
+  };
 }
 
 export async function browseComics(page = 1) {
-  const res = await fetch(`${COMICK_API}/v1.0/search?page=${page}&limit=30&type=comic&t=false`);
-  if (!res.ok) throw new Error("ComicK browse failed");
-  const data = await res.json();
-  const items = (Array.isArray(data) ? data : data.data || []).map((c) => ({
-    id: c.slug || c.hid,
-    title: c.title || c.slug || "Untitled",
-    cover: comickCoverUrl(c.md_covers?.[0]?.b2key),
-    status: comickStatus(c.status),
-  }));
-  return items;
+  const data = await comickFetch(`/search?page=${page}&limit=30`);
+  const list = data.data || (Array.isArray(data) ? data : []);
+  return list.map(mapComic);
 }
 
 export async function searchComics(query) {
-  const res = await fetch(`${COMICK_API}/v1.0/search?q=${encodeURIComponent(query)}&limit=30&t=false`);
-  if (!res.ok) throw new Error("ComicK search failed");
-  const data = await res.json();
+  const data = await comickFetch(`/search?q=${encodeURIComponent(query)}&limit=30`);
   const list = Array.isArray(data) ? data : data.data || [];
-  return list.map((c) => ({
-    id: c.slug || c.hid,
-    title: c.title || c.slug || "Untitled",
-    cover: comickCoverUrl(c.md_covers?.[0]?.b2key),
-    status: comickStatus(c.status),
-  }));
+  return list.map(mapComic);
 }
 
 export async function getComicInfo(slug) {
-  const res = await fetch(`${COMICK_API}/comic/${slug}`);
-  if (!res.ok) throw new Error("ComicK info failed");
-  const data = await res.json();
-  const comic = data.comic || data;
+  const searchData = await comickFetch(`/search?q=${encodeURIComponent(slug.replace(/-/g, " "))}&limit=10`);
+  const list = Array.isArray(searchData) ? searchData : searchData.data || [];
+  const comic = list.find((c) => c.slug === slug) || list[0];
+  if (!comic) throw new Error("Comic not found");
 
   return {
     id: comic.slug || slug,
     title: comic.title || slug,
-    cover: comickCoverUrl(comic.md_covers?.[0]?.b2key),
-    description: stripHtml(comic.parsed || comic.desc),
-    genres: (comic.md_comic_md_genres || []).map((g) => g.md_genres?.name).filter(Boolean),
+    cover: comic.default_thumbnail || null,
+    description: comic.description || null,
+    genres: [],
     status: comickStatus(comic.status),
-    authors: (comic.md_comic_md_authors || []).map((a) => a.md_authors?.name).filter(Boolean),
     year: comic.year,
     lastChapter: comic.last_chapter,
   };
 }
 
 export async function getComicChapters(slug, page = 1) {
-  const res = await fetch(`${COMICK_API}/comic/${slug}/chapters?page=${page}&lang=en`);
-  if (!res.ok) throw new Error("ComicK chapters failed");
-  const data = await res.json();
-  const chapters = (data.chapters || []).map((ch) => ({
+  const data = await comickFetch(`/comics/${slug}/chapter-list?page=${page}&lang=en`);
+  const rawChapters = data.data || data.chapters || (Array.isArray(data) ? data : []);
+  const chapters = rawChapters.map((ch) => ({
     id: ch.hid,
     chapterNumber: ch.chap,
     title: ch.title || null,
     volume: ch.vol,
+    lang: ch.lang || "en",
     date: ch.created_at,
     slug: slug,
   }));
-  const hasMore = data.total ? page * 50 < data.total : chapters.length >= 50;
+  const hasMore = data.pagination
+    ? page < data.pagination.last_page
+    : chapters.length >= 30;
   return { chapters, hasMore };
 }
 
-export async function readComicChapter(hid) {
-  const res = await fetch(`${COMICK_API}/chapter/${hid}`);
-  if (!res.ok) throw new Error("ComicK reader failed");
-  const data = await res.json();
-  const images = data.chapter?.md_images || [];
-  return images.map((img, i) => {
-    let url = img.b2key;
+export async function readComicChapter(hid, slug, chap, lang = "en") {
+  const chapterPath = `${hid}-chapter-${chap}-${lang}`;
+  const data = await comickFetch(`/comics/${slug}/${chapterPath}`);
+  const images = data.chapter?.images || data.chapter?.md_images || [];
+  return images.map((im, i) => {
+    let url = im.url || im.b2key || im.val || "";
     if (url && !url.startsWith("http")) {
       url = `https://meo.comick.pictures/${url}`;
     }
-    return { img: url, page: i };
+    return { img: url, page: i, w: im.w || 0, h: im.h || 0 };
   });
 }

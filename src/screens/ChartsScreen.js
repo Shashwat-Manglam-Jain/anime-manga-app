@@ -2,51 +2,18 @@ import React from "react";
 import {
   View,
   Text,
-  Image,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import ScreenWrapper from "../components/ScreenWrapper";
 import { useTheme } from "../utils/ThemeContext";
-import { CHARTS, HINDI_WEB_SERIES, TOP_MOVIES, TOP_TV_SHOWS } from "../data/curated";
+import { CHARTS } from "../data/curated";
 import { RADIUS, SPACING } from "../utils/theme";
-
-const POSTER_W = 100;
-
-function QuickRow({ title, items, onPress, color, colors }) {
-  return (
-    <View style={styles.quickRow}>
-      <Text style={[styles.quickTitle, { color }]}>{title}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: SPACING.lg }}>
-        {items.slice(0, 10).map((item, i) => (
-          <TouchableOpacity key={item.tmdbId} style={styles.quickCard} activeOpacity={0.7} onPress={() => onPress(item)}>
-            <View>
-              <Image source={{ uri: item.poster }} style={[styles.quickPoster, { backgroundColor: colors.card }]} />
-              <View style={[styles.quickRank, { backgroundColor: colors.accent }]}>
-                <Text style={styles.quickRankText}>{i + 1}</Text>
-              </View>
-              {item.rating ? (
-                <View style={styles.quickRating}>
-                  <Ionicons name="star" size={8} color="#eab308" />
-                  <Text style={styles.quickRatingText}>{item.rating}</Text>
-                </View>
-              ) : null}
-            </View>
-            <Text style={[styles.quickCardTitle, { color: colors.text }]} numberOfLines={2}>{item.title}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
-  );
-}
 
 export default function ChartsScreen({ navigation }) {
   const { colors } = useTheme();
-  const goMovie = (item) => navigation.navigate("MovieDetail", { id: item.tmdbId });
-  const goTV = (item) => navigation.navigate("TVDetail", { id: item.tmdbId });
 
   return (
     <ScreenWrapper>
@@ -87,10 +54,6 @@ export default function ChartsScreen({ navigation }) {
           ))}
         </View>
 
-        <QuickRow title="Top Hindi Series" items={HINDI_WEB_SERIES} onPress={goTV} color="#f97316" colors={colors} />
-        <QuickRow title="Top Rated Movies" items={TOP_MOVIES} onPress={goMovie} color="#3b82f6" colors={colors} />
-        <QuickRow title="Top TV Shows" items={TOP_TV_SHOWS} onPress={goTV} color="#22c55e" colors={colors} />
-
         <View style={{ height: 40 }} />
       </ScrollView>
     </ScreenWrapper>
@@ -130,42 +93,4 @@ const styles = StyleSheet.create({
   chartInfo: { flex: 1 },
   chartTitle: { fontSize: 15, fontWeight: "600" },
   chartDesc: { fontSize: 12, marginTop: 1 },
-  quickRow: { marginBottom: SPACING.xl },
-  quickTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    paddingHorizontal: SPACING.lg,
-    marginBottom: SPACING.sm,
-  },
-  quickCard: { width: POSTER_W, marginRight: SPACING.md },
-  quickPoster: {
-    width: POSTER_W,
-    height: POSTER_W * 1.5,
-    borderRadius: RADIUS.md,
-  },
-  quickRank: {
-    position: "absolute",
-    top: 4,
-    left: 4,
-    borderRadius: RADIUS.sm,
-    width: 20,
-    height: 20,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  quickRankText: { color: "#fff", fontSize: 10, fontWeight: "800" },
-  quickRating: {
-    position: "absolute",
-    top: 4,
-    right: 4,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-    borderRadius: RADIUS.sm,
-  },
-  quickRatingText: { color: "#eab308", fontSize: 9, fontWeight: "700" },
-  quickCardTitle: { fontSize: 11, fontWeight: "500", marginTop: 4 },
 });

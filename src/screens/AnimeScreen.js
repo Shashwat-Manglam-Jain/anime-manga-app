@@ -3,11 +3,12 @@ import { View, Text, StyleSheet } from "react-native";
 import ScreenWrapper from "../components/ScreenWrapper";
 import FilterTabs from "../components/FilterTabs";
 import GridView from "../components/GridView";
-import { getTopAnime, getSeasonNow } from "../api/jikan";
+import { getRecentAnime, getTopAnime, getSeasonNow } from "../api/jikan";
 import { SPACING } from "../utils/theme";
 import { useTheme } from "../utils/ThemeContext";
 
 const FILTERS = [
+  { label: "Recent", value: "recent" },
   { label: "Airing", value: "airing" },
   { label: "Top Rated", value: "top" },
   { label: "TV Series", value: "tv" },
@@ -17,7 +18,7 @@ const FILTERS = [
 
 export default function AnimeScreen({ navigation }) {
   const { colors } = useTheme();
-  const [filter, setFilter] = useState("airing");
+  const [filter, setFilter] = useState("recent");
   const [data, setData] = useState([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -28,7 +29,9 @@ export default function AnimeScreen({ navigation }) {
     setLoading(true);
     try {
       let result;
-      if (f === "airing") {
+      if (f === "recent") {
+        result = await getRecentAnime(p);
+      } else if (f === "airing") {
         result = await getSeasonNow(p);
       } else {
         const type = f === "top" ? undefined : f;

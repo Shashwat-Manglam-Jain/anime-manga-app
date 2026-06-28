@@ -32,6 +32,7 @@ export default function AnimeDetailScreen({ route, navigation }) {
   const [inList, setInList] = useState(false);
   const [showFullSynopsis, setShowFullSynopsis] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [epRangeIdx, setEpRangeIdx] = useState(0);
 
   useEffect(() => {
     setLoading(true);
@@ -101,6 +102,7 @@ export default function AnimeDetailScreen({ route, navigation }) {
       totalSeasons: 1,
       episodeInfo: `Episode ${ep}`,
       isAnime: true,
+      lang,
     });
   };
 
@@ -124,11 +126,19 @@ export default function AnimeDetailScreen({ route, navigation }) {
     );
   }
 
+  const RELATION_PRIORITY = ["Prequel", "Sequel", "Parent Story", "Full Story", "Alternative Version", "Spin-Off", "Side Story"];
+  const relatedAnime = (anime.relations || [])
+    .filter((r) => RELATION_PRIORITY.includes(r.relation))
+    .flatMap((r) => r.entry
+      .filter((e) => e.type === "anime")
+      .map((e) => ({ mal_id: e.mal_id, name: e.name, relation: r.relation }))
+    );
+
   const synopsis = anime.synopsis || "No synopsis available.";
   const shortSynopsis = synopsis.length > 200 ? synopsis.slice(0, 200) + "..." : synopsis;
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper edges={["left", "right", "bottom"]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.bannerWrap}>
           <Image
@@ -213,56 +223,93 @@ export default function AnimeDetailScreen({ route, navigation }) {
             </TouchableOpacity>
           ) : null}
 
-          {totalEps > 0 && (
-            <>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Episodes ({totalEps})</Text>
-              {episodes.length > 0 ? (
-                episodes.slice(0, 20).map((ep) => (
+          {relatedAnime.length > 0 && (
+            <View>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Seasons & Related</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {relatedAnime.map((rel) => (
                   <TouchableOpacity
-                    key={ep.mal_id}
-                    style={[styles.episodeItem, { borderColor: colors.border }]}
-                    onPress={() => handleWatch(ep.mal_id, "sub")}
+                    key={`${rel.relation}-${rel.mal_id}`}
+                    style={[styles.relCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                    activeOpacity={0.7}
+                    onPress={() => navigation.push("AnimeDetail", { id: rel.mal_id })}
                   >
-                    <View style={[styles.epNumWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                      <Text style={[styles.epNum, { color: colors.text }]}>{ep.mal_id}</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.epTitle, { color: colors.text }]} numberOfLines={1}>
-                        {ep.title || `Episode ${ep.mal_id}`}
-                      </Text>
-                      {ep.aired ? (
-                        <Text style={[styles.epDate, { color: colors.textMuted }]}>
-                          {new Date(ep.aired).toLocaleDateString()}
-                        </Text>
-                      ) : null}
-                    </View>
-                    <Ionicons name="play-circle" size={24} color={colors.accent} />
+                    <Text style={[styles.relType, { color: colors.accent }]}>{rel.relation}</Text>
+                    <Text style={[styles.relTitle, { color: colors.text }]} numberOfLines={2}>{rel.name}</Text>
+                    <Ionicons name="chevron-forward" size={14} color={colors.textMuted} style={{ marginTop: 4 }} />
                   </TouchableOpacity>
-                ))
-              ) : (
-                <View style={styles.epGrid}>
-                  {Array.from({ length: Math.min(totalEps, 50) }, (_, i) => i + 1).map((ep) => (
-                    <TouchableOpacity
-                      key={ep}
-                      style={[styles.epGridBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-                      onPress={() => handleWatch(ep, "sub")}
-                    >
-                      <Text style={[styles.epGridText, { color: colors.textSecondary }]}>{ep}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-              {(episodes.length > 20 || totalEps > 50) && (
-                <TouchableOpacity
-                  style={styles.viewAllBtn}
-                  onPress={() => handleWatch(1, "sub")}
-                >
-                  <Text style={[styles.viewAllText, { color: colors.accent }]}>Watch from Episode 1</Text>
-                  <Ionicons name="arrow-forward" size={16} color={colors.accent} />
-                </TouchableOpacity>
-              )}
-            </>
+                ))}
+              </ScrollView>
+            </View>
           )}
+
+          {totalEps > 0 && (() => {
+            const RANGE_SIZE = 50;
+            const ranges = [];
+            for (let start = 1; start <= totalEps; start += RANGE_SIZE) {
+              const end = Math.min(start + RANGE_SIZE - 1, totalEps);
+              ranges.push({ start, end, label: `${start}–${end}` });
+            }
+            const range = ranges[epRangeIdx] || ranges[0];
+            const rangeStart = range.start;
+            const rangeEnd = range.end;
+            const rangeEpisodes = episodes.filter((ep) => ep.mal_id >= rangeStart && ep.mal_id <= rangeEnd);
+
+            return (
+              <>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Episodes ({totalEps})</Text>
+                {ranges.length > 1 && (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: SPACING.md }} contentContainerStyle={{ gap: SPACING.xs }}>
+                    {ranges.map((r, i) => (
+                      <TouchableOpacity
+                        key={r.start}
+                        style={[styles.epRangeBtn, { backgroundColor: colors.card, borderColor: colors.border }, epRangeIdx === i && { backgroundColor: colors.accent, borderColor: colors.accent }]}
+                        onPress={() => setEpRangeIdx(i)}
+                      >
+                        <Text style={[styles.epRangeText, { color: colors.textSecondary }, epRangeIdx === i && { color: "#fff" }]}>{r.label}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                )}
+                {rangeEpisodes.length > 0 ? (
+                  rangeEpisodes.map((ep) => (
+                    <TouchableOpacity
+                      key={ep.mal_id}
+                      style={[styles.episodeItem, { borderColor: colors.border }]}
+                      onPress={() => handleWatch(ep.mal_id, "sub")}
+                    >
+                      <View style={[styles.epNumWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                        <Text style={[styles.epNum, { color: colors.text }]}>{ep.mal_id}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.epTitle, { color: colors.text }]} numberOfLines={1}>
+                          {ep.title || `Episode ${ep.mal_id}`}
+                        </Text>
+                        {ep.aired ? (
+                          <Text style={[styles.epDate, { color: colors.textMuted }]}>
+                            {new Date(ep.aired).toLocaleDateString()}
+                          </Text>
+                        ) : null}
+                      </View>
+                      <Ionicons name="play-circle" size={24} color={colors.accent} />
+                    </TouchableOpacity>
+                  ))
+                ) : (
+                  <View style={styles.epGrid}>
+                    {Array.from({ length: rangeEnd - rangeStart + 1 }, (_, i) => rangeStart + i).map((ep) => (
+                      <TouchableOpacity
+                        key={ep}
+                        style={[styles.epGridBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+                        onPress={() => handleWatch(ep, "sub")}
+                      >
+                        <Text style={[styles.epGridText, { color: colors.textSecondary }]}>{ep}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </>
+            );
+          })()}
 
           {anime.trailer?.url ? (
             <View style={styles.infoSection}>
@@ -284,7 +331,12 @@ export default function AnimeDetailScreen({ route, navigation }) {
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Characters</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {chars.map((c) => (
-                  <View key={c.character.mal_id} style={styles.charCard}>
+                  <TouchableOpacity
+                    key={c.character.mal_id}
+                    style={styles.charCard}
+                    activeOpacity={0.7}
+                    onPress={() => navigation.navigate("CharacterDetail", { id: c.character.mal_id, type: "anime" })}
+                  >
                     <Image
                       source={{ uri: c.character.images?.jpg?.image_url }}
                       style={[styles.charImg, { backgroundColor: colors.card }]}
@@ -293,7 +345,7 @@ export default function AnimeDetailScreen({ route, navigation }) {
                       {c.character.name}
                     </Text>
                     <Text style={[styles.charRole, { color: colors.textMuted }]}>{c.role}</Text>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </ScrollView>
             </View>
@@ -430,15 +482,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   epGridText: { fontSize: 13, fontWeight: "600" },
-  viewAllBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: SPACING.md,
-    marginTop: SPACING.sm,
+  epRangeBtn: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 6,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
   },
-  viewAllText: { fontWeight: "600", fontSize: 14 },
+  epRangeText: { fontSize: 12, fontWeight: "600" },
   infoSection: { marginTop: SPACING.md },
   trailerCard: { borderRadius: RADIUS.md, overflow: "hidden", height: 180 },
   trailerImg: { width: "100%", height: "100%", resizeMode: "cover" },
@@ -448,4 +498,13 @@ const styles = StyleSheet.create({
   charName: { fontSize: 11, fontWeight: "600", marginTop: 4, textAlign: "center" },
   charRole: { fontSize: 10 },
   studioText: { fontSize: 14 },
+  relCard: {
+    width: 140,
+    padding: SPACING.md,
+    marginRight: SPACING.sm,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+  },
+  relType: { fontSize: 11, fontWeight: "700", textTransform: "uppercase", marginBottom: 4 },
+  relTitle: { fontSize: 13, fontWeight: "600" },
 });

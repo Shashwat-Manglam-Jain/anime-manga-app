@@ -38,6 +38,7 @@ export async function getPopularManga(offset = 0) {
         .slice(0, 3) || [],
     })),
     total: data.total,
+    hasMore: offset + 24 < (data.total || 0),
   };
 }
 

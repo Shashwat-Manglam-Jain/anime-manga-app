@@ -2,13 +2,13 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  Image,
   FlatList,
   TouchableOpacity,
   StyleSheet,
   Dimensions,
   ActivityIndicator,
 } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import ScreenWrapper from "../components/ScreenWrapper";
 import { readComicChapter } from "../api/comick";
@@ -19,14 +19,14 @@ const { width } = Dimensions.get("window");
 
 export default function ComicReaderScreen({ route, navigation }) {
   const { colors } = useTheme();
-  const { chapterId, chapterTitle, comicTitle } = route.params;
+  const { chapterId, chapterNumber, chapterLang = "en", comicSlug, chapterTitle, comicTitle } = route.params;
   const [pages, setPages] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
-        const result = await readComicChapter(chapterId);
+        const result = await readComicChapter(chapterId, comicSlug, chapterNumber, chapterLang);
         setPages(result);
       } catch (err) {
         console.log("ComicK reader error:", err.message);
@@ -65,9 +65,9 @@ export default function ComicReaderScreen({ route, navigation }) {
         windowSize={7}
         renderItem={({ item }) => (
           <Image
-            source={{ uri: item.img }}
-            style={[styles.pageImage, { backgroundColor: colors.card }]}
-            resizeMode="contain"
+            source={{ uri: item.img, headers: { Referer: "https://comick.art/" } }}
+            style={[styles.pageImage, { backgroundColor: colors.card, height: item.h && item.w ? width * (item.h / item.w) : width * 1.4 }]}
+            contentFit="contain"
           />
         )}
         ListEmptyComponent={

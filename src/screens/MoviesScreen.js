@@ -18,6 +18,7 @@ const TABS = [
   { label: "Top Rated", value: "top_rated", icon: "star-outline" },
   { label: "Now Playing", value: "now_playing", icon: "play-outline" },
   { label: "Upcoming", value: "upcoming", icon: "calendar-outline" },
+  { label: "Bollywood", value: "bollywood", icon: "film-outline" },
 ];
 
 function mapMovies(results) {
@@ -67,14 +68,18 @@ export default function MoviesScreen({ navigation }) {
     else setLoadingMore(true);
     try {
       let result;
-      if (g) {
+      if (t === "bollywood") {
+        const params = { with_original_language: "hi", sort_by: "popularity.desc" };
+        if (g) params.with_genres = String(g);
+        result = await discoverMovies(p, params);
+      } else if (g) {
         result = await discoverMovies(p, {
           with_genres: String(g),
           sort_by: t === "top_rated" ? "vote_average.desc" : t === "trending" ? "popularity.desc" : "popularity.desc",
           "vote_count.gte": t === "top_rated" ? 200 : undefined,
         });
       } else if (t === "trending") {
-        result = await getTrending();
+        result = await getTrending(p);
       } else if (t === "popular") {
         result = await getPopular(p);
       } else if (t === "top_rated") {
@@ -86,8 +91,7 @@ export default function MoviesScreen({ navigation }) {
       }
       const items = mapMovies(result.results);
       setData((prev) => (p === 1 ? items : [...prev, ...items]));
-      const noPage = !g && t === "trending";
-      setHasMore(!noPage && (result.page || 1) < (result.total_pages || 1));
+      setHasMore((result.page || 1) < (result.total_pages || 1));
     } catch (err) {
       console.log(err.message);
     }

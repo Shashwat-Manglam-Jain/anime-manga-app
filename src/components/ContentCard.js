@@ -2,11 +2,12 @@ import React, { memo } from "react";
 import {
   View,
   Text,
-  Image,
+  Image as RNImage,
   TouchableOpacity,
   StyleSheet,
   Dimensions,
 } from "react-native";
+import { Image as ExpoImage } from "expo-image";
 import { useTheme } from "../utils/ThemeContext";
 import { RADIUS, SPACING } from "../utils/theme";
 
@@ -19,10 +20,18 @@ function ContentCard({ poster, title, subtitle, onPress, badge }) {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={[styles.imgWrap, { backgroundColor: colors.card }]}>
-        <Image
-          source={{ uri: poster || "https://via.placeholder.com/300x450?text=No+Image" }}
-          style={styles.img}
-        />
+        {poster && poster.includes("comick") ? (
+          <ExpoImage
+            source={{ uri: poster, headers: { Referer: "https://comick.art/" } }}
+            style={styles.img}
+            contentFit="cover"
+          />
+        ) : (
+          <RNImage
+            source={{ uri: poster || "https://via.placeholder.com/300x450?text=No+Image" }}
+            style={styles.img}
+          />
+        )}
         {badge ? (
           <View style={[styles.badge, { backgroundColor: colors.accent }]}>
             <Text style={styles.badgeText}>{badge}</Text>

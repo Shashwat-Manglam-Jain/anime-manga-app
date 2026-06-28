@@ -1,42 +1,3 @@
-export const ANIME_PROVIDERS = [
-  {
-    id: "megaplay",
-    name: "MegaPlay",
-    buildMalUrl: (malId, episode, lang) =>
-      `https://megaplay.buzz/stream/mal/${malId}/${episode}/${lang}`,
-    buildEmbedUrl: (embedId, lang) =>
-      `https://megaplay.buzz/stream/s-2/${embedId}/${lang}`,
-    buildAnilistUrl: (anilistId, episode, lang) =>
-      `https://megaplay.buzz/stream/ani/${anilistId}/${episode}/${lang}`,
-  },
-  {
-    id: "animplay",
-    name: "AnimPlay",
-    buildMalUrl: (malId, episode, lang) =>
-      `https://animeplay.cfd/stream/mal/${malId}/${episode}/${lang}`,
-    buildEmbedUrl: (embedId, lang) =>
-      `https://animeplay.cfd/stream/s-2/${embedId}/${lang}`,
-    buildAnilistUrl: (anilistId, episode, lang) =>
-      `https://animeplay.cfd/stream/ani/${anilistId}/${episode}/${lang}`,
-  },
-  {
-    id: "megaplay2",
-    name: "MegaPlay S1",
-    buildMalUrl: (malId, episode, lang) =>
-      `https://megaplay.buzz/stream/mal/${malId}/${episode}/${lang}`,
-    buildEmbedUrl: (embedId, lang) =>
-      `https://megaplay.buzz/stream/s-1/${embedId}/${lang}`,
-    buildAnilistUrl: (anilistId, episode, lang) =>
-      `https://megaplay.buzz/stream/ani/${anilistId}/${episode}/${lang}`,
-  },
-  {
-    id: "videasy-anime",
-    name: "Videasy",
-    buildMalUrl: (malId, episode, lang) =>
-      `https://player.videasy.to/anime/mal/${malId}/${episode}/${lang}`,
-  },
-];
-
 export const MOVIE_PROVIDERS = [
   {
     id: "videasy",
@@ -67,3 +28,5 @@ export const MOVIE_PROVIDERS = [
       `https://autoembed.co/tv/tmdb/${tmdbId}-${season}-${episode}`,
   },
 ];
+
+export const ANIME_PROVIDERS = MOVIE_PROVIDERS;

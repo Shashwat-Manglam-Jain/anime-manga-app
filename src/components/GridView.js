@@ -2,12 +2,13 @@ import React, { memo } from "react";
 import {
   View,
   Text,
-  Image,
+  Image as RNImage,
   TouchableOpacity,
   FlatList,
   StyleSheet,
   Dimensions,
 } from "react-native";
+import { Image as ExpoImage } from "expo-image";
 import { SkeletonGrid } from "./SkeletonLoader";
 import { useTheme } from "../utils/ThemeContext";
 import { RADIUS, SPACING } from "../utils/theme";
@@ -52,10 +53,18 @@ function GridView({ data, onPressItem, onEndReached, loading, badge, ListHeaderC
           onPress={() => onPressItem?.(item)}
         >
           <View style={[styles.imgWrap, { backgroundColor: colors.card }]}>
-            <Image
-              source={{ uri: item.poster || "https://via.placeholder.com/300x450?text=No+Image" }}
-              style={styles.img}
-            />
+            {item.poster && item.poster.includes("comick") ? (
+              <ExpoImage
+                source={{ uri: item.poster, headers: { Referer: "https://comick.art/" } }}
+                style={styles.img}
+                contentFit="cover"
+              />
+            ) : (
+              <RNImage
+                source={{ uri: item.poster || "https://via.placeholder.com/300x450?text=No+Image" }}
+                style={styles.img}
+              />
+            )}
             {badge?.(item) ? (
               <View style={[styles.badge, { backgroundColor: colors.accent }]}>
                 <Text style={styles.badgeText}>{badge(item)}</Text>
